@@ -17,25 +17,25 @@ import LiveCodeEditor from '../components/LiveCodeEditor.jsx'
 
 // ─── useAntiCheating ─────────────────────────────────────────────────────────
 function useAntiCheating(socketRef, roomId, enabled) {
-  const [violations, setViolations] = useState([])
+  const [violations, setViolations] = useState(0)
+
+  const reportViolation = useCallback((type) => {
+    if (!enabled) return
+    setViolations(v => {
+      const n = v + 1
+      socketRef.current?.emit('anti-cheat-violation', { roomId, violationType: type, count: n })
+      return n
+    })
+  }, [roomId, enabled, socketRef])
+
   useEffect(() => {
     if (!enabled) return
     const onVisibility = () => {
-      if (document.hidden) {
-        setViolations(v => {
-          const n = v + 1
-          socketRef.current?.emit('anti-cheat-violation', { roomId, violationType: 'Tab Switch', count: n })
-          return n
-        })
-      }
+      if (document.hidden) reportViolation('Tab Switch / Hidden')
     }
     const onMouseLeave = (e) => {
       if (e.clientY <= 0 || e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
-        setViolations(v => {
-          const n = v + 1
-          socketRef.current?.emit('anti-cheat-violation', { roomId, violationType: 'Mouse Left Window', count: n })
-          return n
-        })
+        reportViolation('Mouse Left Window')
       }
     }
     document.addEventListener('visibilitychange', onVisibility)
@@ -44,8 +44,9 @@ function useAntiCheating(socketRef, roomId, enabled) {
       document.removeEventListener('visibilitychange', onVisibility)
       document.removeEventListener('mouseleave', onMouseLeave)
     }
-  }, [roomId, enabled])
-  return violations
+  }, [enabled, reportViolation])
+
+  return { count: violations, reportViolation }
 }
 
 // ─── VideoTile ────────────────────────────────────────────────────────────────
@@ -203,10 +204,10 @@ export default function MeetingRoom() {
   const iceQueueRef = useRef({})     // Queue for ICE candidates
 
   // Anti-cheat (local violation count)
-  const localViolations = useAntiCheating(socketRef, meetingId, true)
+  const { count: localViolations, reportViolation } = useAntiCheating(socketRef, meetingId, true)
 
   // Face analysis
-  const { metrics: faceMetrics, generateReport } = useFaceAnalysis(localStream, isSpeakingLocally)
+  const { metrics: faceMetrics, generateReport } = useFaceAnalysis(localStream, isSpeakingLocally, reportViolation)
 
   // AI questions
   const aiQuestions = [

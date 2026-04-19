@@ -6,13 +6,14 @@ import * as faceapi from 'face-api.js'
  * Samples the local video stream every 3s, detects facial expressions using TensorFlow.js,
  * and maps them to interview metrics.
  */
-export function useFaceAnalysis(localStream, isSpeaking) {
+export function useFaceAnalysis(localStream, isSpeaking, onViolation) {
   const [metrics, setMetrics] = useState({
     focus: 82, confidence: 70, stress: 18, eyeContact: 78,
     dominant: 'Focused', breakdown: { focused: 55, confident: 25, neutral: 15, stressed: 5 }
   })
   const [timeline, setTimeline] = useState([])
   const videoElRef = useRef(null)
+  const lastViolationTime = useRef(0)
 
   useEffect(() => {
     let modelsLoaded = false
@@ -38,13 +39,21 @@ export function useFaceAnalysis(localStream, isSpeaking) {
     const analyze = async () => {
       if (video.readyState < 2 || !modelsLoaded) return
       try {
-        const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions()
+        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions()
 
         let focus = 50, confidence = 40, stress = 15, eyeContact = 50, dominant = 'Neutral'
         let breakdown = { focused: 0, confident: 0, neutral: 100, stressed: 0 }
 
-        if (detections) {
-          const expr = detections.expressions
+        if (detections && detections.length > 0) {
+          if (detections.length > 1 && onViolation) {
+            if (Date.now() - lastViolationTime.current > 10000) {
+              onViolation('Multiple Faces Detected')
+              lastViolationTime.current = Date.now()
+            }
+          }
+
+          const face = detections.sort((a, b) => b.detection.area - a.detection.area)[0]
+          const expr = face.expressions
           
           // face-api.js returns values from 0.0 to 1.0 for each emotion
           const neutral = expr.neutral || 0
