@@ -34,7 +34,7 @@ async function boot() {
   try {
     await sequelize.authenticate();
     console.log('✅ Database connected');
-    await sequelize.sync({ alter: true });
+    await sequelize.sync();
     console.log('✅ Database synced');
     server.listen(PORT, () => {
       console.log(`🚀 AIVA Server running on http://localhost:${PORT}`);
