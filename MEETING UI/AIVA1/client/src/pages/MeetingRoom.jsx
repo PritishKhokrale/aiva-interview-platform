@@ -138,8 +138,8 @@ export default function MeetingRoom() {
   const effectiveEmail = user?.email || guestEmail || ''
   const wasAdmitted = searchParams.get('admitted') === '1'
 
-  // Pre-join phase (skip if came through waiting room admission)
-  const [phase, setPhase] = useState(wasAdmitted ? 'meeting' : 'prejoin')
+  // Pre-join phase (always run prejoin to get media, even if admitted)
+  const [phase, setPhase] = useState('prejoin')
 
   // Media
   const [localStream, setLocalStream] = useState(null)
@@ -197,6 +197,7 @@ export default function MeetingRoom() {
   const speakTimerRef = useRef(null)
   const chatEndRef = useRef(null)
   const transcriptEndRef = useRef(null)
+  const iceQueueRef = useRef({})     // Queue for ICE candidates
 
   // Anti-cheat (local violation count)
   const localViolations = useAntiCheating(socketRef, meetingId, true)
@@ -283,31 +284,18 @@ export default function MeetingRoom() {
 
     const init = async () => {
       // Get media — taken from PreJoinScreen stream passed in via onJoin
-      // Fallback: If admitted from waiting room, acquire media now
-      let stream = localStreamRef.current
-      if (!stream) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-          localStreamRef.current = stream
-          setIsVideoOff(false)
-          setIsMuted(false)
-        } catch (e) {
-          console.error('Failed to capture local media:', e)
-        }
-      }
-      
-      if (stream) { 
-        setLocalStream(stream); 
-        startAudio(stream);
-      }
+      // localStreamRef.current is set by handlePreJoinReady before init() runs
+      const stream = localStreamRef.current
+      if (stream) { setLocalStream(stream); startAudio(stream) }
 
       // Socket & WebRTC init runs here — meetingInfo already loaded during pre-join
       if (!meetingInfo) {
+        // fallback fetch in case pre-join didn't complete meetingInfo
         try {
           const r = await fetch(`/api/meetings/${meetingId}`)
           if (r.ok) {
             const m = await r.json(); setMeetingInfo(m)
-            const hosting = m.hostEmail === (user?.email || searchParams.get('email') || '')
+            const hosting = m.hostEmail === effectiveEmail
             setIsHost(hosting); setMyRole(hosting ? 'host' : 'candidate')
             if (hosting) setCanRecord(true)
           }
@@ -320,11 +308,7 @@ export default function MeetingRoom() {
 
       socket.on('connect', () => {
         setMySocketId(socket.id)
-        socket.emit('join-room', { 
-          roomId: meetingId, 
-          name: user?.name || searchParams.get('name') || 'Guest', 
-          email: user?.email || searchParams.get('email') || '' 
-        })
+        socket.emit('join-room', { roomId: meetingId, name: effectiveName, email: effectiveEmail })
       })
 
       socket.on('room-state', async ({ participants: existing, socketId: myId }) => {
@@ -353,6 +337,14 @@ export default function MeetingRoom() {
         const pc = createPC(fromSocketId, fromName)
         setPeers(prev => ({ ...prev, [fromSocketId]: { ...prev[fromSocketId], name: fromName } }))
         await pc.setRemoteDescription(new RTCSessionDescription(offer))
+
+        if (iceQueueRef.current[fromSocketId]) {
+          for (const c of iceQueueRef.current[fromSocketId]) {
+            await pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {})
+          }
+          delete iceQueueRef.current[fromSocketId]
+        }
+
         const answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
         socket.emit('answer', { targetSocketId: fromSocketId, answer })
@@ -360,12 +352,27 @@ export default function MeetingRoom() {
 
       socket.on('answer', async ({ fromSocketId, answer }) => {
         const pc = pcsRef.current[fromSocketId]
-        if (pc && pc.signalingState !== 'stable') await pc.setRemoteDescription(new RTCSessionDescription(answer)).catch(() => {})
+        if (pc && pc.signalingState !== 'stable') {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer)).catch(() => {})
+          
+          if (iceQueueRef.current[fromSocketId]) {
+            for (const c of iceQueueRef.current[fromSocketId]) {
+              await pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {})
+            }
+            delete iceQueueRef.current[fromSocketId]
+          }
+        }
       })
 
       socket.on('ice-candidate', async ({ fromSocketId, candidate }) => {
+        if (!candidate) return
         const pc = pcsRef.current[fromSocketId]
-        if (pc && candidate) await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {})
+        if (pc && pc.remoteDescription) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {})
+        } else {
+          if (!iceQueueRef.current[fromSocketId]) iceQueueRef.current[fromSocketId] = []
+          iceQueueRef.current[fromSocketId].push(candidate)
+        }
       })
 
       socket.on('participant-left', ({ socketId }) => {
@@ -431,7 +438,7 @@ export default function MeetingRoom() {
       })
       socket.on('interview-mode-update', (settings) => setInterviewMode(settings))
       socket.on('meeting-lock-update', ({ locked }) => setMeetingLocked(locked))
-      socket.on('meeting-locked', () => navigate('/dashboard'))
+      socket.on('meeting-locked', () => navigate('/join'))
       socket.on('meeting-ended', () => navigate('/dashboard'))
       socket.on('kicked', () => navigate('/dashboard'))
     }
@@ -611,7 +618,7 @@ export default function MeetingRoom() {
     
     // INTEGRATION: Push transcript to Flask Control Plane for Unified Dashboard Report
     try {
-      await fetch('https://aiva-python-api.onrender.com/api/report/live-webhook', {
+      await fetch('http://127.0.0.1:5000/api/report/live-webhook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -623,8 +630,8 @@ export default function MeetingRoom() {
       });
     } catch (e) { console.error('Failed to push to Flask Control Plane', e); }
 
-    // INTEGRATION: Redirect to Meeting UI Dashboard
-    navigate('/dashboard');
+    // INTEGRATION: Redirect to Unified Dashboard
+    window.location.href = 'http://127.0.0.1:5000/dashboard';
   }
 
   // Host control functions
