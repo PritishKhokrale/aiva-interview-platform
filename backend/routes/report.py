@@ -77,11 +77,11 @@ def get_report(interview_id):
             print(f"Failed to fetch report from Supabase: {e}")
 
     # Fallback to local memory (demo mode)
-    session = current_interviews.get(interview_id, {})
-    eval_data = session.get("evaluation", {})
-    history = session.get("history", [])
+    iv_session = current_interviews.get(interview_id, {})
+    eval_data = iv_session.get("evaluation", {})
+    history = iv_session.get("history", [])
     overall_score = eval_data.get("overall_score", 0)
-    config = session.get("config", {})
+    config = iv_session.get("config", {})
     
     # Sanitize question analysis for local demo mode too
     qa_list = eval_data.get("question_analysis", [])
