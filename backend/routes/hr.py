@@ -14,22 +14,6 @@ def hr_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@hr_bp.route('/pool', methods=['GET'])
-@hr_required
-def pool_page():
-    applicants = []
-    try:
-        supabase = get_supabase_client(access_token=session.get('access_token'))
-        if supabase:
-            # RLS policy automatically filters this to ONLY applications for this HR's job drives
-            res = supabase.table('job_applications').select('*, candidates(name, email), job_drives(job_role, company_name)').order('applied_at', desc=True).execute()
-            if res.data:
-                applicants = res.data
-    except Exception as e:
-        print(f"Error fetching HR applicants: {e}")
-        
-    return render_template('hr_candidate_pool.html', applicants=applicants)
-
 @hr_bp.route('/config', methods=['GET'])
 @hr_required
 def config_page():
@@ -131,14 +115,16 @@ def review_candidate(candidate_id):
                 avg_score = sum(scores) / len(scores)
                 avg_score = round(avg_score, 1)
                 
-            # Naive role derivation based on last interview role
+            # AI Recommendation: Unique roles across all historical interviews (Max 2)
             if interviews:
-                roles_set = set()
-                for i in interviews:
-                    if i.get('role'):
-                        roles_set.add(i.get('role'))
-                # Limit to latest 3 distinct roles
-                recommended_roles = list(roles_set)[:3]
+                unique_roles = list(set([i.get('role') for i in interviews if i.get('role')]))
+                # Filter out 'Unknown' if we have other valid roles
+                valid_roles = [r for r in unique_roles if r.lower() != 'unknown']
+                
+                if not valid_roles and unique_roles:
+                    valid_roles = unique_roles
+                    
+                recommended_roles = valid_roles[:2]
                 
     except Exception as e:
         print(f"Error fetching candidate profile in HR view: {e}")
@@ -152,3 +138,19 @@ def review_candidate(candidate_id):
         highest_score=highest_score,
         recommended_roles=recommended_roles
     )
+
+@hr_bp.route('/candidates', methods=['GET'])
+@hr_required
+def candidate_pool():
+    applicants = []
+    try:
+        supabase = get_supabase_client(access_token=session.get('access_token'))
+        # RLS policy automatically filters this to ONLY applications for this HR's job drives
+        res = supabase.table('job_applications').select('*, candidates(name, email), job_drives(job_role, company_name)').order('applied_at', desc=True).execute()
+        if res.data:
+            applicants = res.data
+    except Exception as e:
+        print(f"Error fetching HR applicants: {e}")
+        flash("Failed to fetch candidate pool. Please check permissions.", "error")
+        
+    return render_template('hr_candidates.html', applicants=applicants)

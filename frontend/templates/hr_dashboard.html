@@ -23,7 +23,7 @@
     <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Quick Actions</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
         <!-- Card 1 -->
-        <a href="{{ url_for('hr.pool_page') }}" class="card" style="text-decoration: none; display: flex; flex-direction: column; height: 100%; transition: transform 0.2s, box-shadow 0.2s; border-top: 4px solid #10b981;">
+        <a href="{{ url_for('hr.candidate_pool') }}" class="card" style="text-decoration: none; display: flex; flex-direction: column; height: 100%; transition: transform 0.2s, box-shadow 0.2s; border-top: 4px solid #10b981;">
             <div style="padding: 1.5rem;">
                 <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.1); color: #10b981; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
                     <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
@@ -62,14 +62,11 @@
             <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.1); margin-top: auto; font-weight: 600; color: #f59e0b; text-align: right;">
                 Open Monitor &rarr;
             </div>
-        </a>
-    </div>
-
     <!-- Future Expansions Placeholders -->
     <div class="card" style="padding: 2rem; border-radius: 16px; border: 1px dashed var(--border-color); text-align: center; background: rgba(0,0,0,0.2);">
         <svg fill="none" stroke="var(--text-secondary)" width="48" height="48" viewBox="0 0 24 24" style="opacity:0.5; margin-bottom:1rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-        <h3 style="margin:0 0 0.5rem 0; color: var(--text-primary);">Dashboard Modules</h3>
-        <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto; line-height: 1.5;">Select a module from the Quick Actions above to manage configurations, candidate pools, and active tracking.</p>
+        <h3 style="margin:0 0 0.5rem 0; color: var(--text-primary);">Data Population Imminent</h3>
+        <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto; line-height: 1.5;">This HR Dashboard is currently a clean layout ready for deeper integrations. Explore the configurations panel and candidate pool above.</p>
     </div>
 </div>
 {% endblock %}
