@@ -3,14 +3,15 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { io } from 'socket.io-client'
 import { Video, Clock, CheckCircle, XCircle, Wifi } from 'lucide-react'
+import { useAuth } from '../context/AuthContext.jsx'
 
 export default function WaitingRoomPage() {
   const { meetingId } = useParams()
-  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
-  const name = searchParams.get('name') || 'Guest'
-  const email = searchParams.get('email') || ''
+  const name = user?.name || 'Authenticated Candidate'
+  const email = user?.email || ''
 
   const [status, setStatus] = useState('connecting')   // connecting | waiting | admitted | rejected
   const [meetingTitle, setMeetingTitle] = useState('')
