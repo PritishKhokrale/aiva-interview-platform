@@ -1,0 +1,146 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="margin-bottom: 0.5rem;">Dashboard</h1>
+            <p style="margin: 0;">Welcome back! Here's an overview of your practice sessions.</p>
+        </div>
+        <a href="{{ url_for('upload_page') }}" class="btn-primary" style="text-decoration: none;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            New Practice Interview
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+        <div class="card">
+            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Practices</h3>
+            <p style="font-size: 2.25rem; font-weight: 700; color: var(--text-primary); margin: 0;">{{ total_practices | default(0) }}</p>
+        </div>
+        <div class="card">
+            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Average Score</h3>
+            <p style="font-size: 2.25rem; font-weight: 700; color: var(--text-primary); margin: 0;">{% if avg_score > 0 %}{{ avg_score }}%{% else %}--{% endif %}</p>
+        </div>
+        <div class="card">
+            <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Highest Score</h3>
+            <p style="font-size: 2.25rem; font-weight: 700; color: var(--success-color); margin: 0;">{% if highest_score > 0 %}{{ highest_score }}%{% else %}--{% endif %}</p>
+        </div>
+    </div>
+
+    <h2 style="margin-bottom: 1.5rem;">Recent Practice Sessions</h2>
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Role / Target</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Score</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for iv in recent_interviews|default([]) %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                            {% if iv.session_mode == 'apti' %}Aptitude Test: {% endif %}{{ iv.role }}
+                            {% if iv.session_mode == 'apti' %}
+                                <span style="font-size: 0.65rem; background: #eff6ff; color: #1d4ed8; padding: 2px 6px; border-radius: 4px; border: 1px solid #dbeafe;">APTI</span>
+                            {% elif iv.session_mode == 'combined' %}
+                                <span style="font-size: 0.65rem; background: #fdf2f8; color: #be185d; padding: 2px 6px; border-radius: 4px; border: 1px solid #fce7f3;">COMBINED</span>
+                            {% else %}
+                                <span style="font-size: 0.65rem; background: #ecfdf5; color: #047857; padding: 2px 6px; border-radius: 4px; border: 1px solid #d1fae5;">AI</span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.75rem; color: #6b7280; margin-top: 2px;">
+                            {{ iv.created_at[:10] if iv.created_at else 'N/A' }}
+                        </div>
+                    </td>
+                    <td style="color: var(--text-secondary);">
+                        {{ iv.created_at[:16].replace('T', ' ') if iv.created_at else 'N/A' }}
+                    </td>
+                    <td>
+                        {% if iv.status == 'completed' %}
+                            <span class="status-badge status-success">Completed</span>
+                        {% else %}
+                            <span class="status-badge status-pending">In Progress</span>
+                        {% endif %}
+                    </td>
+                    {% if iv.status == 'completed' %}
+                        {% if iv.session_mode == 'apti' %}
+                            <td style="font-weight: 600;">
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <span class="status-badge" style="background: rgba(168, 85, 247, 0.1); color: #7c3aed; border: 1px solid rgba(168, 85, 247, 0.2);">Aptitude: {{ iv.aptitude_score|default('--') }}%</span>
+                                </div>
+                            </td>
+                            <td style="display: flex; gap: 1rem; align-items: center;">
+                                <a href="{{ url_for('aptitude_report_page', interview_id=iv.id) }}" style="color: var(--primary-color); text-decoration: none; font-weight: 500; font-size: 0.875rem;">View Report</a>
+                                <button onclick="deleteInterview('{{ iv.id }}')" style="background: none; border: none; color: #EF4444; cursor: pointer; text-decoration: none; font-size: 0.875rem; font-weight: 500; padding: 0;">Delete</button>
+                            </td>
+                        {% elif iv.interview_reports %}
+                            {% set report = iv.interview_reports[0] if iv.interview_reports is iterable and iv.interview_reports is not mapping else iv.interview_reports %}
+                            <td style="font-weight: 600;">
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <span class="status-badge {% if report.overall_score and report.overall_score >= 70 %}status-success{% else %}status-danger{% endif %}">Interview: {{ report.overall_score|default('--') }}%</span>
+                                    {% if iv.aptitude_score is defined and iv.aptitude_score is not none %}
+                                    <span class="status-badge" style="background: rgba(168, 85, 247, 0.1); color: #7c3aed; border: 1px solid rgba(168, 85, 247, 0.2);">Aptitude: {{ iv.aptitude_score }}%</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td style="display: flex; gap: 1rem; align-items: center;">
+                                <a href="{{ url_for('report.get_report', interview_id=iv.id) }}" style="color: var(--primary-color); text-decoration: none; font-weight: 500; font-size: 0.875rem;">View Report</a>
+                                <button onclick="deleteInterview('{{ iv.id }}')" style="background: none; border: none; color: #EF4444; cursor: pointer; text-decoration: none; font-size: 0.875rem; font-weight: 500; padding: 0;">Delete</button>
+                            </td>
+                        {% else %}
+                            <td style="color: var(--text-secondary);">--</td>
+                            <td style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: var(--text-secondary); font-size: 0.875rem;">Processing Error</span>
+                                <button onclick="deleteInterview('{{ iv.id }}')" style="background: none; border: none; color: #EF4444; cursor: pointer; text-decoration: none; font-size: 0.875rem; font-weight: 500; padding: 0;">Delete</button>
+                            </td>
+                        {% endif %}
+                    {% else %}
+                        <td style="color: var(--text-secondary);">--</td>
+                        <td style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--text-secondary); font-size: 0.875rem;">Pending</span>
+                            <button onclick="deleteInterview('{{ iv.id }}')" style="background: none; border: none; color: #EF4444; cursor: pointer; text-decoration: none; font-size: 0.875rem; font-weight: 500; padding: 0;">Delete</button>
+                        </td>
+                    {% endif %}
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="padding: 3rem; text-align: center; color: var(--text-secondary);">
+                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.3; margin-bottom: 1rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <p style="margin: 0;">No practice sessions yet. Start a new interview to begin!</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function deleteInterview(id) {
+        if(confirm('Are you sure you want to permanently delete this practice session?')) {
+            try {
+                const res = await fetch(`/api/interview/${id}`, { 
+                    method: 'DELETE',
+                    credentials: 'same-origin'
+                });
+                if(res.ok) {
+                    window.location.reload();
+                } else {
+                    alert('An error occurred or you are unauthorized to delete this interview.');
+                }
+            } catch (err) {
+                console.error("Delete Error", err);
+                alert("Failed to delete interview.");
+            }
+        }
+    }
+</script>
+{% endblock %}

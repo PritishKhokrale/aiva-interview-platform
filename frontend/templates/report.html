@@ -1,0 +1,172 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate-fade-in" style="max-width: 1200px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 2rem;">
+        <div>
+            <h1 style="margin-bottom: 0.5rem; font-size: 2rem;">Practice Session Report</h1>
+            <p style="color: var(--text-primary); margin: 0; font-size: 1.1rem;">
+                Target Role: <strong>{{ evaluation.role | default('Software Engineer') }}</strong> | 
+                Type: <strong>{{ evaluation.summary.type | default('Mixed') if evaluation.summary is mapping else 'Mixed' }}</strong> | 
+                Difficulty: <strong>{{ evaluation.summary.difficulty_faced | default('Unknown') if evaluation.summary is mapping else 'Unknown' }}</strong>
+            </p>
+            <p style="color: var(--text-secondary); margin: 0; margin-top: 5px; font-size: 0.875rem;">Completed Just Now</p>
+        </div>
+        <div style="text-align: right;">
+            <p style="margin: 0; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Final Verdict</p>
+            
+            {% set verdict = evaluation.final_verdict | default('Borderline') %}
+            <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; color: {% if verdict == 'Selected' %}var(--success-color){% elif verdict == 'Rejected' %}var(--danger-color){% else %}#eab308{% endif %};">
+                {{ verdict }}
+            </div>
+            
+            <p style="margin: 0; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Overall Score</p>
+            <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color); line-height: 1;">
+                {{ overall_score }}%
+            </div>
+        </div>
+    </div>
+
+    <!-- SUMMARY SECTION -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3 style="margin-top: 0; font-size: 1.25rem;">Executive Summary</h3>
+        <p style="color: var(--text-primary); line-height: 1.6; font-size: 1.05rem; background: var(--bg-secondary); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--primary-color);">
+            {{ evaluation.summary.overview | default('No summary provided.') if evaluation.summary is mapping else evaluation.summary | default('No summary provided.') }}
+        </p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+            <!-- Strengths -->
+            <div>
+                <strong style="color: var(--success-color); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem; font-size: 1rem;">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Key Strengths
+                </strong>
+                <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">
+                    {% for str in evaluation.strengths|default([]) %}
+                    <li>{{ str }}</li>
+                    {% else %}
+                    <li>Pending analysis</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <!-- Weaknesses -->
+            <div>
+                <strong style="color: #eab308; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem; font-size: 1rem;">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    Areas for Improvement
+                </strong>
+                <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">
+                    {% for weak in evaluation.weaknesses|default([]) %}
+                    <li>{{ weak }}</li>
+                    {% else %}
+                    <li>No immediate weaknesses noted</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Red Flags -->
+            <div>
+                <strong style="color: var(--danger-color); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem; font-size: 1rem;">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    Red Flags
+                </strong>
+                <ul style="margin: 0; padding-left: 1.2rem; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">
+                    {% for flag in evaluation.red_flags|default([]) %}
+                    <li>{{ flag }}</li>
+                    {% else %}
+                    <li>None detected. Excellent!</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- METRICS SECTION -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3 style="margin-top: 0; font-size: 1.125rem;">Performance Metrics</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+            {% if evaluation.metrics %}
+                {% for metric_label, metric_key in [('Technical Accuracy', 'technical'), ('Communication Skills', 'communication'), ('Confidence Level', 'confidence'), ('Problem Solving', 'problem_solving'), ('Clarity of Thought', 'clarity_of_thought')] %}
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.9rem;">
+                        <span style="font-weight: 500;">{{ metric_label }}</span>
+                        <span style="font-weight: 600; color: var(--primary-color);">{{ evaluation.metrics[metric_key] | default(0) }}%</span>
+                    </div>
+                    <div style="height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden;">
+                        <div style="width: {{ evaluation.metrics[metric_key] | default(0) }}%; height: 100%; background: var(--primary-color); border-radius: 4px;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: var(--text-secondary);">Generating metrics...</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- IMPROVEMENT PLAN -->
+    {% if evaluation.improvement_plan %}
+    <div class="card" style="margin-bottom: 2rem; border-left: 4px solid #8b5cf6;">
+        <h3 style="margin-top: 0; font-size: 1.125rem; color: #8b5cf6;">Recommended Improvement Plan</h3>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+            <div>
+                <strong>📚 What to Study:</strong> 
+                <span style="color: var(--text-secondary);">{{ evaluation.improvement_plan.what_to_study | default('Keep practising your cores.') }}</span>
+            </div>
+            <div>
+                <strong>🗣️ Communication:</strong> 
+                <span style="color: var(--text-secondary);">{{ evaluation.improvement_plan.communication | default('Maintain clear articulation.') }}</span>
+            </div>
+            <div>
+                <strong>🎯 Practice Strategy:</strong> 
+                <span style="color: var(--text-secondary);">{{ evaluation.improvement_plan.practice_strategy | default('Do more mock interviews.') }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- QUESTION-WISE ANALYSIS -->
+    <h2 style="font-size: 1.5rem; margin-top: 3rem; margin-bottom: 1.5rem;">Question-By-Question Analysis</h2>
+    {% if evaluation.question_analysis %}
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            {% for qa in evaluation.question_analysis %}
+            <div class="card" style="padding: 1.5rem; border-radius: 12px; border-top: 4px solid var(--primary-color);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-primary); max-width: 80%;">Q{{ loop.index }}: {{ qa.question }}</h4>
+                    <span style="background: rgba(37,99,235,0.1); color: var(--primary-color); padding: 4px 12px; border-radius: 20px; font-weight: bold;">Score: {{ qa.score }}</span>
+                </div>
+                
+                <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <strong style="color: var(--text-primary); font-size: 0.9rem;">Your Answer:</strong>
+                    <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">"{{ qa.candidate_answer if (qa.candidate_answer and qa.candidate_answer|lower|trim not in ['', 'not answered by the candidate', 'none', 'null']) else 'Not answered by the candidate' }}"</p>
+                </div>
+                
+                <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <strong style="color: var(--success-color); font-size: 0.9rem;">Expected Answer / Structure:</strong>
+                    <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">{{ qa.expected_answer }}</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div><strong style="font-size: 0.8rem; text-transform: uppercase; color: #64748b;">Correctness</strong><br><span style="font-weight: 500; font-size: 0.9rem;">{{ qa.evaluation.correctness | default('N/A') if qa.evaluation is mapping else qa.evaluation }}</span></div>
+                    <div><strong style="font-size: 0.8rem; text-transform: uppercase; color: #64748b;">Tech Depth</strong><br><span style="font-weight: 500; font-size: 0.9rem;">{{ qa.evaluation.depth | default('N/A') if qa.evaluation is mapping else 'N/A' }}</span></div>
+                    <div><strong style="font-size: 0.8rem; text-transform: uppercase; color: #64748b;">Communication</strong><br><span style="font-weight: 500; font-size: 0.9rem;">{{ qa.evaluation.communication | default('N/A') if qa.evaluation is mapping else 'N/A' }}</span></div>
+                    <div><strong style="font-size: 0.8rem; text-transform: uppercase; color: #64748b;">Confidence</strong><br><span style="font-weight: 500; font-size: 0.9rem;">{{ qa.evaluation.confidence | default('N/A') if qa.evaluation is mapping else 'N/A' }}</span></div>
+                </div>
+
+                <div style="border-left: 3px solid #f59e0b; padding-left: 1rem; margin-top: 1rem;">
+                    <strong style="color: #ea580c; font-size: 0.9rem;">Recruiter Feedback:</strong>
+                    <p style="margin: 0.3rem 0 0 0; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">{{ qa.feedback }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: var(--text-secondary); font-style: italic; background: var(--bg-secondary); padding: 1.5rem; border-radius: 8px; text-align: center;">No specific question breakdown available. Transcript was likely too short or unavailable.</p>
+    {% endif %}
+
+    <div style="margin-top: 4rem; margin-bottom: 2rem; text-align: center;">
+        <a href="{{ url_for('dashboard_page') }}" class="btn-primary" style="text-decoration: none; padding: 1rem 3rem; font-size: 1.1rem; font-weight: bold; display: inline-block;">Back to Dashboard</a>
+    </div>
+
+</div>
+{% endblock %}

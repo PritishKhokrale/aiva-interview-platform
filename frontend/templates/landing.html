@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIVA - AI Voice Interview Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        /* Standalone Landing Page Overrides */
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .landing-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 5%;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .landing-nav-brand {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .landing-nav-brand svg {
+            stroke: #818cf8;
+        }
+
+        .hero-section {
+            padding: 8rem 5% 2rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            color: #ffffff;
+            margin-bottom: 1.5rem;
+            max-width: 900px;
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -1px;
+        }
+
+        .hero-title span {
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: #94a3b8;
+            max-width: 700px;
+            margin-bottom: 4rem;
+            line-height: 1.6;
+        }
+
+        /* Core Features Action Grid */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            width: 100%;
+            max-width: 1400px;
+            margin-top: 1rem;
+        }
+
+        .action-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 3rem 2rem;
+            text-align: left;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            text-decoration: none;
+            color: white;
+        }
+
+        .action-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.03), transparent);
+            transform: translateX(-100%);
+            transition: 0.5s;
+        }
+
+        .action-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .action-card:hover {
+            transform: translateY(-8px);
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+        }
+
+        /* Card Specifics */
+        .card-ai { border-top: 4px solid #818cf8; }
+        .card-live { border-top: 4px solid #10b981; }
+        .card-dsa { border-top: 4px solid #f59e0b; }
+        .card-vibe { border-top: 4px solid #ec4899; }
+
+        .card-ai .icon { color: #818cf8; background: rgba(129, 140, 248, 0.1); }
+        .card-live .icon { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+        .card-dsa .icon { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+        .card-vibe .icon { color: #ec4899; background: rgba(236, 72, 153, 0.1); }
+
+        .action-card .icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .action-card .icon svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .action-card h3 {
+            font-size: 1.5rem;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            margin: 0 0 1rem 0;
+            color: #ffffff;
+        }
+
+        .action-card p {
+            color: #94a3b8;
+            line-height: 1.6;
+            margin: 0 0 2rem 0;
+            font-size: 1rem;
+            flex-grow: 1;
+        }
+
+        .launch-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            transition: 0.2s;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            justify-content: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card-ai .launch-btn { background: #818cf8; color: #fff; }
+        .card-ai .launch-btn:hover { background: #6366f1; }
+        
+        .card-live .launch-btn { background: #10b981; color: #fff; }
+        .card-live .launch-btn:hover { background: #059669; }
+        
+        .card-dsa .launch-btn { background: #f59e0b; color: #fff; }
+        .card-dsa .launch-btn:hover { background: #d97706; }
+
+        .card-vibe .launch-btn { background: #ec4899; color: #fff; }
+        .card-vibe .launch-btn:hover { background: #db2777; }
+
+        @media (max-width: 1024px) {
+            .action-grid { grid-template-columns: repeat(2, 1fr); }
+            .hero-title { font-size: 3.5rem; }
+        }
+        @media (max-width: 768px) {
+            .action-grid { grid-template-columns: 1fr; }
+            .hero-title { font-size: 2.5rem; }
+        }
+
+        /* Clerk Login specific overrides */
+        .cl-rootBox { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="#" class="landing-nav-brand">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M2 17L12 22L22 17" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M2 12L12 17L22 12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            AIVA HUB
+        </a>
+        <div id="auth-buttons" style="display: flex; gap: 1rem; align-items: center;">
+            {% if session.get('access_token') %}
+                <span style="color: #94a3b8; font-weight: 500; font-size: 0.95rem;">Hello, {{ session.get('user_name', 'User') }}</span>
+                <a href="{{ url_for('dashboard_page') }}" class="btn-secondary" style="padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); text-decoration: none;">Dashboard</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn-primary" style="padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; background: #ef4444; color: white; text-decoration: none;">Log Out</a>
+            {% else %}
+                <a href="{{ url_for('auth.login_page') }}" class="btn-secondary" style="padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); text-decoration: none;">Log In</a>
+                <a href="{{ url_for('auth.signup_page') }}" class="btn-primary" style="padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; background: #818cf8; color: white; text-decoration: none;">Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <h1 class="hero-title">
+            {% if session.get('user_name') %}
+                Welcome Back, <span>{{ session.get('user_name') }}</span>.
+            {% else %}
+                Prepare to <span>Dominate</span><br>Your Next Interview.
+            {% endif %}
+        </h1>
+        <p class="hero-subtitle">Step into the ultimate preparation hub. Choose between our cutting-edge AI interviewer, connect with a peer, or sharpen your coding skills in the dedicated DSA arena.</p>
+        
+        <div class="action-grid">
+            <!-- Feature 1: AI Interview (Redirects to Dashboard) -->
+            <a href="{{ url_for('dashboard_page') }}" class="action-card card-ai">
+                <div class="icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"></path></svg>
+                </div>
+                <h3>AI Interview</h3>
+                <p>Configure a mock interview tailored to your resume or job description. Experience dynamic questioning, adaptability, and comprehensive post-interview feedback metrics.</p>
+                <div class="launch-btn">Start Mock Exam</div>
+            </a>
+
+            <!-- Feature 2: Live Human Meeting (Direct Access) -->
+            <div onclick="startLiveMeeting()" class="action-card card-live" style="cursor: pointer;">
+                <div class="icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </div>
+                <h3>Live Interview</h3>
+                <p>Jump instantly into a peer-to-peer real-time collaborative sandbox featuring WebRTC video profiles, a synchronized code editor, and anti-cheating protocols.</p>
+                <div class="launch-btn">Enter Target Room</div>
+            </div>
+
+            <!-- Feature 3: DSA Practice (Redirects to React App) -->
+            <a href="http://localhost:3000" target="_blank" rel="noopener noreferrer" class="action-card card-dsa">
+                <div class="icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                </div>
+                <h3>DSA Code Practice</h3>
+                <p>Sharpen your algorithms. Enter the dedicated IDE environment equipped with real-world Data Structure and Algorithm challenges and compile them in real-time.</p>
+                <div class="launch-btn">Launch IDE</div>
+            </a>
+
+            <!-- Feature 4: WebContainer Editor -->
+            <a href="{{ url_for('code_editor_page') }}" class="action-card card-vibe">
+                <div class="icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                </div>
+                <h3>WebContainer IDE</h3>
+                <p>Build full-stack Next.js, React, or Express apps entirely in your browser with AI code generation and terminal access.</p>
+                <div class="launch-btn">Open Editor</div>
+            </a>
+        </div>
+    </section>
+
+    <script>
+        // Start Direct Live Meeting Script
+        function startLiveMeeting() {
+            // Redirect to the Vite App base port
+            window.location.href = `http://localhost:5173/`;
+        }
+    </script>
+</body>
+</html>

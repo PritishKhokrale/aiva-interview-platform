@@ -1,0 +1,202 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<style>
+    .code-editor-container {
+        width: 100%;
+        height: calc(100vh - 2rem);
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        padding: 0;
+        margin: 0;
+    }
+
+    .code-editor-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1.25rem;
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+        border-radius: 12px 12px 0 0;
+        flex-shrink: 0;
+    }
+
+    .code-editor-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .code-editor-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+        color: #818cf8;
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        padding: 0.3rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+    }
+
+    .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 6px #22c55e;
+        animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    .code-editor-iframe-wrapper {
+        flex: 1;
+        position: relative;
+        border-radius: 0 0 12px 12px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        border-top: none;
+    }
+
+    .code-editor-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+        background: #0f1117;
+    }
+
+    .iframe-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        background: #0f1117;
+        color: #6b7280;
+        font-size: 0.875rem;
+        z-index: 10;
+        transition: opacity 0.4s ease;
+    }
+
+    .iframe-loading.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(99, 102, 241, 0.2);
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="code-editor-container">
+    <div class="code-editor-header">
+        <div class="code-editor-header-left">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#818cf8;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+            </svg>
+            <span style="font-weight:700; font-size:1rem;">Vibe Code Editor</span>
+            <span class="code-editor-badge">
+                <span class="status-dot"></span>
+                AI Powered
+            </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+            <span style="font-size:0.75rem;color:var(--text-secondary);">Powered by Monaco + WebContainers + Ollama</span>
+            <a href="http://localhost:3001" target="_blank"
+               style="font-size:0.75rem;color:#818cf8;text-decoration:none;display:flex;align-items:center;gap:4px;">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                Open full screen
+            </a>
+        </div>
+    </div>
+
+    <div class="code-editor-iframe-wrapper">
+        <div class="iframe-loading" id="iframeLoading">
+            <div class="loading-spinner"></div>
+            <p style="margin:0;">Loading Vibe Code Editor...</p>
+            <p style="margin:0;font-size:0.75rem;opacity:0.6;">Make sure the editor is running on port 3001</p>
+        </div>
+        <iframe
+            id="vibeEditorFrame"
+            class="code-editor-iframe"
+            src="http://localhost:3001"
+            allow="cross-origin-isolated"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"
+            onload="onIframeLoad()">
+        </iframe>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Token that AIVA passes to the vibe editor for seamless auth
+    const AIVA_TOKEN = "{{ access_token | default('') }}";
+    const AIVA_USER_ID = "{{ session.user_id | default('') }}";
+    const AIVA_USER_NAME = "{{ session.user_name | default('User') }}";
+
+    function onIframeLoad() {
+        const iframe = document.getElementById('vibeEditorFrame');
+        const loading = document.getElementById('iframeLoading');
+
+        // Hide loading overlay
+        loading.classList.add('hidden');
+
+        // Give the iframe a moment to render before posting the token
+        setTimeout(() => {
+            if (AIVA_TOKEN && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({
+                    type: 'AIVA_AUTH_TOKEN',
+                    access_token: AIVA_TOKEN,
+                    user_id: AIVA_USER_ID,
+                    user_name: AIVA_USER_NAME
+                }, 'http://localhost:3001');
+            }
+        }, 1000);
+    }
+
+    // Auto-retry if iframe fails to connect
+    setTimeout(() => {
+        const loading = document.getElementById('iframeLoading');
+        if (!loading.classList.contains('hidden')) {
+            loading.innerHTML = `
+                <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#f59e0b;opacity:0.7;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <p style="margin:0;color:#f59e0b;font-weight:600;">Editor not responding</p>
+                <p style="margin:0;font-size:0.78rem;opacity:0.7;">Run <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;">npm run dev</code> in <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;">35-building-vibe-code-editor</code></p>
+                <button onclick="document.getElementById('vibeEditorFrame').src='http://localhost:3001'"
+                    style="margin-top:0.5rem;padding:0.5rem 1.25rem;background:#6366f1;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">
+                    Retry
+                </button>
+            `;
+        }
+    }, 8000);
+</script>
+{% endblock %}

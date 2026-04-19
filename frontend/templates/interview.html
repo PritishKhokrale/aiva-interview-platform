@@ -1,0 +1,342 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate-fade-in" style="display: grid; grid-template-columns: 350px 1fr; gap: 2rem; height: calc(100vh - 120px); max-width: 1200px; margin: 0 auto; overflow: hidden;">
+
+    <!-- Left Column: Live Transcript / Dialog Box -->
+    <div style="display: flex; flex-direction: column; height: 100%; min-height: 0;">
+        <div style="margin-bottom: 1rem; text-align: left;">
+            <span style="background: rgba(37, 99, 235, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 20px; font-weight: 600; font-size: 0.875rem;">Live Transcript</span>
+        </div>
+        <div id="transcriptBox" class="card" style="text-align: left; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: var(--card-shadow); scrollbar-width: thin;">
+            <!-- Chat bubbles go here -->
+            <div style="color: var(--text-secondary); font-style: italic; font-size: 0.85rem; text-align: center; margin-top: auto;">Transcript will appear here as you speak...</div>
+        </div>
+    </div>
+
+    <!-- Right Column: Active Interaction Area -->
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; background: rgba(255, 255, 255, 0.2); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.3); padding: 2rem;">
+        
+        <!-- Top Status Bar -->
+        <div style="position: absolute; top: 1.5rem; width: calc(100% - 3rem); display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
+            <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;" id="timerDisplay">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--danger-color); animation: pulse 2s infinite;"></div>
+                Live Time: 00:00
+            </div>
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">AI INTERVIEWER ACTIVE</div>
+        </div>
+
+        <!-- AI Avatar & Voice Visualization -->
+        <div style="margin-bottom: 2rem;">
+            <div style="width: 140px; height: 140px; border-radius: 50%; background: #fff; border: 3px solid #e2e8f0; margin: 0 auto; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; position: relative; transition: all 0.3s ease;">
+                <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="22"></line>
+                </svg>
+
+                <div class="voice-ring" id="voiceRing1" style="display:none; position: absolute; border: 2px solid var(--primary-hover); width: 100%; height: 100%; border-radius: 50%; animation: ring-pulse 2.5s infinite;"></div>
+                <div class="voice-ring" id="voiceRing2" style="display:none; position: absolute; border: 2px solid var(--primary-color); width: 100%; height: 100%; border-radius: 50%; animation: ring-pulse 2.5s infinite 1.25s;"></div>
+            </div>
+        </div>
+
+        <!-- Dynamic Question Area -->
+        <div style="margin-bottom: 3rem; text-align: center; min-height: 120px; display: flex; align-items: center; justify-content: center; padding: 0 2rem;">
+            <h2 style="font-size: 1.75rem; font-family: 'Outfit', sans-serif; margin: 0; font-weight: 600; color: var(--text-primary); line-height: 1.3; letter-spacing: -0.01em;" id="questionText">"Connecting to Virtual Assistant..."</h2>
+        </div>
+
+        <!-- Controls Area (Stays absolute at the bottom of the right column) -->
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; gap: 1.5rem; width: 100%; justify-content: center; padding: 2rem; background: linear-gradient(to top, rgba(255,255,255,0.95) 40%, rgba(255,255,255,0)); z-index: 100; border-bottom-right-radius: 24px;">
+            <button class="btn-secondary" style="display: flex; align-items: center; gap: 0.75rem; color: #ef4444; border: 1.5px solid #fca5a5; background: #fff; padding: 0.8rem 1.5rem; font-weight: 600; transition: all 0.2s; white-space: nowrap;" onclick="endInterview()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                </svg>
+                End Session
+            </button>
+            <button class="btn-primary" style="display: flex; align-items: center; gap: 0.75rem; font-size: 1.1rem; padding: 1rem 2.5rem; border-radius: 16px; min-width: 250px; justify-content: center; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); white-space: nowrap;" id="micBtn" onclick="toggleMic()" disabled>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                </svg>
+                <span id="micBtnText">Hold to Speak</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes pulse {
+        0% { transform: scale(0.95); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(0.95); opacity: 0.5; }
+    }
+
+    @keyframes ring-pulse {
+        0% { transform: scale(1); opacity: 0.8; }
+        100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    .chat-bubble {
+        padding: 0.8rem 1.2rem;
+        border-radius: 12px;
+        max-width: 85%;
+        line-height: 1.5;
+        font-size: 0.95rem;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .ai-bubble {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+    }
+
+    .user-bubble {
+        background: var(--primary-color);
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentInterviewId = null;
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+
+    // Load dynamic config for turns
+    const storedConfig = localStorage.getItem('interview_config');
+    const interviewConfig = storedConfig ? JSON.parse(storedConfig) : {};
+    
+    // Map duration to question count (Matching backend)
+    const durationMap = {
+        "short": 5,
+        "standard": 10,
+        "intensive": 15
+    };
+    const MAX_TURNS = durationMap[interviewConfig.duration] || 10;
+    let turnCount = 0;
+    
+    // Timer
+    let secondsElapsed = 0;
+    setInterval(() => {
+        secondsElapsed++;
+        const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+        const secs = String(secondsElapsed % 60).padStart(2, '0');
+        document.getElementById('timerDisplay').innerHTML = `
+            <div style="width: 10px; height: 10px; border-radius: 50%; background-color: #ff3b30; animation: pulse 2s infinite;"></div>
+            Live Time: ${mins}:${secs}
+        `;
+    }, 1000);
+
+    // TTS Setup
+    let voices = [];
+    window.speechSynthesis.onvoiceschanged = () => {
+        voices = window.speechSynthesis.getVoices();
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const storedConfig = localStorage.getItem('interview_config');
+            const config = storedConfig ? JSON.parse(storedConfig) : { role: "Software Engineer", difficulty: "medium", mode: "resume" };
+
+            // Check if we already have a session ID from the setup or aptitude round
+            const existingId = localStorage.getItem('current_interview_id');
+            
+            if (existingId) {
+                currentInterviewId = existingId;
+                // Fetch first question manually since we didn't call /start
+                // In a production app, /start should probably be idempotent or we fetch session state
+                // For this prototype, we'll re-trigger the first question logic via a custom endpoint or just re-call /start if needed
+                // BUT better yet, let's make /start return existing session if called with same ID? 
+                // Actually, let's just make it call /start to get the first question, but pass the ID to force it.
+                config.interview_id = currentInterviewId;
+            }
+
+            const response = await fetch('/api/interview/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(config)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+
+            if (data.interview_id) {
+                currentInterviewId = data.interview_id;
+                localStorage.setItem('current_interview_id', currentInterviewId);
+            }
+
+            if (data.first_question) {
+                renderAIQuestion(data.first_question);
+                document.getElementById('micBtn').disabled = false;
+            } else {
+                document.getElementById('questionText').innerText = "Session started but no question received. Try refreshing.";
+            }
+        } catch (error) {
+            console.error("Error starting interview:", error);
+            document.getElementById('questionText').innerText = "Error: " + error.message + ". Please refresh to try again.";
+        }
+    });
+
+    function renderAIQuestion(text) {
+        document.getElementById('questionText').innerText = `"${text}"`;
+        addChatBubble(text, 'ai');
+        speakText(text);
+    }
+
+    function addChatBubble(text, sender) {
+        const box = document.getElementById('transcriptBox');
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble ${sender === 'ai' ? 'ai-bubble' : 'user-bubble'}`;
+        bubble.innerText = text;
+        box.appendChild(bubble);
+        box.scrollTop = box.scrollHeight; // Auto-scroll
+    }
+
+    function speakText(text) {
+        if ('speechSynthesis' in window) {
+            // Stop previous utterances
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            const preferredVoice = voices.find(v => v.name.includes("Google US English")) || voices[0];
+            if (preferredVoice) utterance.voice = preferredVoice;
+
+            // Show rings when speaking
+            document.getElementById('voiceRing1').style.display = 'block';
+            document.getElementById('voiceRing2').style.display = 'block';
+
+            utterance.onend = () => {
+                document.getElementById('voiceRing1').style.display = 'none';
+                document.getElementById('voiceRing2').style.display = 'none';
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    async function toggleMic() {
+        const btn = document.getElementById('micBtn');
+
+        if (!isRecording) {
+            // Start Rec
+            try {
+                window.speechSynthesis.cancel(); // stop AI talking
+
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+                mediaRecorder.start();
+
+                isRecording = true;
+                btn.style.background = '#dc3545';
+                btn.innerHTML = `<svg width="24" height="24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> Finish Answering`;
+            } catch (err) {
+                alert("Please allow microphone access.");
+            }
+        } else {
+            // Submit
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+
+                    isRecording = false;
+
+                    // Optimistic UI update
+                    const originalHtml = btn.innerHTML;
+                    btn.innerHTML = `Evaluating...`;
+                    btn.disabled = true;
+                    btn.style.background = '#666';
+
+                    await submitAnswer(audioBlob, btn, originalHtml);
+                };
+            }
+        }
+    }
+
+    async function submitAnswer(audioBlob, btn, originalHtml) {
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "answer.webm");
+        if (currentInterviewId) {
+            formData.append("interview_id", currentInterviewId);
+        }
+
+        try {
+            const response = await fetch('/api/interview/submit-answer', { method: 'POST', body: formData });
+            const result = await response.json();
+
+            // Render User's Answer
+            if (result.transcript) {
+                addChatBubble(result.transcript, 'user');
+            }
+
+            // Render AI's Follow Up
+            if (result.next_question) {
+                renderAIQuestion(result.next_question);
+            }
+
+            turnCount++;
+            if (turnCount >= MAX_TURNS) {
+                endInterview();
+            }
+
+        } catch (error) {
+            console.error(error);
+        } finally {
+            // Restore btn
+            btn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path></svg> Hold to Speak`;
+            btn.disabled = false;
+            btn.style.background = 'var(--primary-color)';
+        }
+    }
+
+    async function endInterview() {
+        if (!currentInterviewId) return;
+
+        // Mute any currently playing AI audio
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+
+        const btn = document.querySelector('.btn-secondary');
+        btn.innerText = "Analyzing Score...";
+        btn.disabled = true;
+
+        try {
+            // Tell backend we are done, trigger massive LLM evaluation
+            await fetch('/api/interview/evaluate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ interview_id: currentInterviewId })
+            });
+
+            window.location.href = `/api/report/${currentInterviewId}`;
+        } catch (e) {
+            console.log(e);
+            alert("Error analyzing interview. Please try again.");
+            btn.innerText = "End Interview";
+            btn.disabled = false;
+        }
+    }
+</script>
+{% endblock %}

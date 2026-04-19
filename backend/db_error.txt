@@ -1,0 +1,4 @@
+Interview ID: f879ed6d-c1d8-4544-bbaa-b58767135085
+Candidate ID: 0cb58a56-57e7-46eb-8470-9fda1ddded4a
+Error: {'message': "Could not find the 'candidate_id' column of 'interview_reports' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+

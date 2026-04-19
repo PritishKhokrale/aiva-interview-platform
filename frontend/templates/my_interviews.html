@@ -1,0 +1,147 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+        <div>
+            <h1 style="margin-bottom: 0.5rem;">My Interviews</h1>
+            <p style="margin: 0;">Review your past performance and improvement tracks.</p>
+        </div>
+        <a href="{{ url_for('upload_page') }}" class="btn-primary" style="text-decoration: none;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            New Practice
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+        {% for iv in interviews %}
+        <div class="card" style="display: flex; flex-direction: column; height: 100%; position: relative; overflow: hidden; padding: 0;">
+            <!-- Card Header/Status -->
+            <div style="padding: 1.25rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">
+                        {% if iv.session_mode == 'apti' %}Aptitude Test: {% endif %}{{ iv.role }}
+                    </h3>
+                    <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-secondary);">
+                        {{ iv.created_at[:16].replace('T', ' ') if iv.created_at else 'N/A' }}
+                    </p>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                    {% if iv.status == 'completed' %}
+                        <span class="status-badge status-success">Completed</span>
+                    {% else %}
+                        <span class="status-badge status-pending">In Progress</span>
+                    {% endif %}
+                    
+                    {% if iv.aptitude_score is defined and iv.aptitude_score is not none %}
+                        <span class="status-badge" style="background: rgba(168, 85, 247, 0.1); color: #7c3aed; border: 1px solid rgba(168, 85, 247, 0.2); font-size: 0.65rem;">Aptitude: {{ iv.aptitude_score }}%</span>
+                    {% endif %}
+                    
+                    <!-- Session Mode Badge -->
+                    {% if iv.session_mode == 'apti' %}
+                        <span class="status-badge" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; font-size: 0.65rem;">APTI</span>
+                    {% elif iv.session_mode == 'combined' %}
+                        <span class="status-badge" style="background: #fdf2f8; color: #be185d; border: 1px solid #fce7f3; font-size: 0.65rem;">COMBINED</span>
+                    {% else %}
+                        <span class="status-badge" style="background: #ecfdf5; color: #047857; border: 1px solid #d1fae5; font-size: 0.65rem;">AI</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Card Body -->
+            <div style="padding: 1.25rem; flex-grow: 1;">
+                {% if iv.status == 'completed' %}
+                    {% if iv.session_mode == 'apti' %}
+                        <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 1rem;">
+                            <span style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">{{ iv.aptitude_score|default(0) }}</span>
+                            <span style="font-size: 1rem; color: var(--text-secondary); font-weight: 500;">/ 100</span>
+                            <span style="margin-left: auto; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: {% if iv.aptitude_score and iv.aptitude_score >= 70 %}#D1FAE5; color: #065F46;{% else %}#FEE2E2; color: #991B1B;{% endif %}">
+                                {{ "PASSED" if iv.aptitude_score and iv.aptitude_score >= 70 else "FAILED" }}
+                            </span>
+                        </div>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 1rem;">
+                            Aptitude test completed successfully. Detailed AI breakdown may not be available for purely Aptitude sessions.
+                        </p>
+                    {% elif iv.interview_reports %}
+                        {% set report = iv.interview_reports[0] if iv.interview_reports is iterable and iv.interview_reports is not mapping else iv.interview_reports %}
+                        
+                        <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 1rem;">
+                            <span style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">{{ report.overall_score }}</span>
+                            <span style="font-size: 1rem; color: var(--text-secondary); font-weight: 500;">/ 100</span>
+                            <span style="margin-left: auto; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: {% if report.overall_score >= 70 %}#D1FAE5; color: #065F46;{% else %}#FEE2E2; color: #991B1B;{% endif %}">
+                                {{ "PASSED" if report.overall_score >= 70 else "FAILED" }}
+                            </span>
+                        </div>
+
+                    <p style="font-size: 0.875rem; color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 1rem;">
+                        {{ report.summary|default('Detailed analysis available in the full report.') }}
+                    </p>
+
+                    <!-- Mini Metrics -->
+                    {% if report and report.metrics %}
+                    <div style="display: flex; gap: 12px; margin-top: auto;">
+                        <div title="Technical" style="display: flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary-color);"></div>
+                            Tech: {{ report.metrics.technical|default('--') }}%
+                        </div>
+                        <div title="Communication" style="display: flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--success-color);"></div>
+                            Comm: {{ report.metrics.communication|default('--') }}%
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                {% else %}
+                    <div style="height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-secondary); border-radius: 8px; border: 1px dashed var(--border-color);">
+                        <svg width="24" height="24" fill="none" stroke="var(--text-secondary)" viewBox="0 0 24 24" style="opacity: 0.5; margin-bottom: 8px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <p style="font-size: 0.8rem; margin: 0;">Session not yet completed</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Card Footer -->
+            <div style="padding: 1rem 1.25rem; background: #F9FAFB; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                {% if iv.status == 'completed' %}
+                    {% if iv.session_mode == 'apti' %}
+                        <a href="{{ url_for('aptitude_report_page', interview_id=iv.id) }}" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem; width: auto;">View Report</a>
+                    {% else %}
+                        <a href="{{ url_for('report.get_report', interview_id=iv.id) }}" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem; width: auto;">View Report</a>
+                    {% endif %}
+                {% else %}
+                    <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.8rem; cursor: not-allowed; opacity: 0.6;" disabled>Pending</button>
+                {% endif %}
+                
+                <button onclick="deleteInterview('{{ iv.id }}')" style="background: none; border: none; color: var(--danger-color); cursor: pointer; font-size: 0.8rem; font-weight: 600; padding: 0.5rem;">
+                    Delete
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div style="grid-column: 1 / -1; padding: 5rem 2rem; text-align: center; background: white; border-radius: 12px; border: 2px dashed var(--border-color);">
+            <svg width="64" height="64" fill="none" stroke="var(--border-color)" viewBox="0 0 24 24" style="margin-bottom: 1.5rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <h2 style="color: var(--text-secondary);">No interviews found</h2>
+            <p>You haven't completed any practice sessions yet. Start your first one to see the analysis here!</p>
+            <a href="{{ url_for('upload_page') }}" class="btn-primary" style="margin-top: 1.5rem; text-decoration: none;">Start New Practice</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+async function deleteInterview(id) {
+    if(confirm('Are you sure you want to permanently delete this practice session?')) {
+        try {
+            const res = await fetch(`/api/interview/${id}`, { method: 'DELETE' });
+            if(res.ok) {
+                window.location.reload();
+            } else {
+                alert('Failed to delete interview.');
+            }
+        } catch (err) {
+            console.error("Delete Error", err);
+            alert("An error occurred.");
+        }
+    }
+}
+</script>
+{% endblock %}

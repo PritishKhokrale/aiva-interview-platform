@@ -1,0 +1,45 @@
+# AIVA Project Implementation Plan
+
+- [x] Project Setup
+  - [x] Create folder structure (backend, frontend/templates, frontend/static)
+- [x] Backend Initialization
+  - [x] Initialize [app.py](file:///c:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/app.py)
+  - [x] Initialize Routes ([interview.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/routes/interview.py), [upload.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/routes/upload.py), [report.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/routes/report.py))
+  - [x] Initialize Services ([ai_engine.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/services/ai_engine.py), [speech_engine.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/services/speech_engine.py), [resume_parser.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/services/resume_parser.py))
+  - [x] Initialize Database ([supabase_client.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/database/supabase_client.py))
+  - [x] Initialize Utils ([evaluation.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/utils/evaluation.py))
+- [x] Frontend Development
+  - [x] Set up Custom CSS with Electric Violet + Glassmorphism theme ([style.css](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/frontend/static/css/style.css))
+  - [x] Create Templates ([dashboard.html](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/frontend/templates/dashboard.html), [upload.html](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/frontend/templates/upload.html), [interview.html](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/frontend/templates/interview.html), [report.html](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/frontend/templates/report.html))
+  - [x] Create basic JS utilities ([main.js](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/frontend/static/js/main.js))
+- [x] Integration Basics
+  - [x] Hook up Flask with Templates
+  - [x] Provide Instructions for running the app
+
+- [x] Phase 2: Core Engine Integrations
+  - [x] Set up [requirements.txt](file:///c:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/requirements.txt) and environment variables
+  - [x] Integrate Groq API (LLaMA models) in [ai_engine.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/services/ai_engine.py) for dynamic questions
+  - [x] Setup Supabase Client connection
+  - [x] Connect real Audio APIs (Whisper/Speech) or add realistic mock
+  - [x] Implement robust Resume Parsing (PyPDF)
+
+- [x] Phase 3: Wiring Submissions & Evaluation
+  - [x] Implement Browser MediaRecorder for WebAudio voice capture
+  - [x] Hook frontend up to send audio blobs to the backend `/submit-answer` endpoint
+  - [x] Update backend to process audio with [speech_to_text(Whisper)](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/services/speech_engine.py#7-23)
+  - [x] Update backend to evaluate answer with [evaluate_response(LLaMA)](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/services/ai_engine.py#90-120)
+  - [x] Collate scoring and transition to [report.html](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/frontend/templates/report.html) when interview concludes
+
+- [x] Phase 4: Conversational Interview Architecture
+  - [x] Modify [ai_engine.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/services/ai_engine.py) to maintain conversation history and generate dynamic next questions
+  - [x] Update `/start` to generate only the opening question
+  - [x] Update `/submit-answer` to return the AI's contextual response + next question
+  - [x] Update [interview.html](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/frontend/templates/interview.html) to append to a chat transcript UI and wait for dynamic responses
+  - [x] Update [evaluation.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/utils/evaluation.py) to score the entire transcript natively instead of per-question
+
+- [ ] Phase 5: Database Integration (Supabase)
+  - [ ] Write SQL schema and instructions for the user to create tables
+  - [ ] Connect [app.py](file:///c:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/app.py) or routes to insert `candidates` upon upload
+  - [ ] Connect `/start` to generate a new `interviews` row returning an ID
+  - [ ] Connect `/evaluate` to save the `interview_reports` row
+  - [ ] Update [dashboard.html](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/frontend/templates/dashboard.html) to fetch and list past interviews

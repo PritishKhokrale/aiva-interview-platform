@@ -1,0 +1,66 @@
+# Supabase Database Integration Plan
+
+Currently, AIVA stores the interview history and evaluation in python global variables. We need to persist these to Supabase so we can view them on the Dashboard and maintain state.
+
+## 1. Database Schema (User Action Required)
+
+The user will need to go to the Supabase SQL Editor and run the following commands to construct the relational tables:
+
+```sql
+-- Create candidates table (Parsed from uploaded resumes)
+CREATE TABLE candidates (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name TEXT,
+    email TEXT,
+    skills TEXT[],
+    experience TEXT,
+    parsed_resume_text TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create interviews table (Active interview sessions)
+CREATE TABLE interviews (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    candidate_id UUID REFERENCES candidates(id),
+    role TEXT NOT NULL,
+    difficulty TEXT,
+    status TEXT DEFAULT 'in_progress', -- 'in_progress' or 'completed'
+    history JSONB DEFAULT '[]'::jsonb, -- Array of {role: user/assistant, content: text}
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create reports table (Final evaluations)
+CREATE TABLE interview_reports (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    interview_id UUID REFERENCES interviews(id) UNIQUE,
+    overall_score INTEGER,
+    summary TEXT,
+    strengths TEXT[],
+    weaknesses TEXT[],
+    metrics JSONB, -- {technical: 90, communication: 85, confidence: 90}
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## 2. Updated Application Flow
+
+### A. The Dashboard (`app.py / index`)
+We will use `supabase.table("interview_reports").select("*, interviews(*, candidates(*))")` to fetch a list of completed interviews and render them on the active dashboard.
+
+### B. The Setup/Upload Route
+Normally this parses a resume. For now, when a user clicks "Start" we will insert a mock `Candidate` row and an `Interviews` row, returning the `interview_id`.
+
+### C. The Interview Routes ([interview.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/routes/interview.py))
+- We will modify the global `current_interview` object to be a dictionary mapping `interview_id` to its state, or just directly read/write from Supabase.
+- To keep things snappy and avoid latency delays between speech turns, we can continue to store `history` in the Python session dictionary *during* the live interview.
+- When `/evaluate` is called at the end, we will:
+  1. `UPDATE interviews SET history = [], status = 'completed'`
+  2. `INSERT INTO interview_reports (...)`
+  
+### D. The Report Route ([report.py](file:///C:/Users/Aayush/OneDrive/Documents/Desktop/AIVA/backend/routes/report.py))
+- We will change `/report/<id>` to query Supabase `interview_reports` joining on `interviews` by the specific UUID to get the permanent record.
+
+## Verification
+- User runs the SQL script in their Supabase console.
+- We click through a full interview.
+- We verify the Dashboard correctly lists the historical interviews.

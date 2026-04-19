@@ -1,0 +1,262 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate-fade-in" style="max-width: 900px; margin: 0 auto; height: calc(100vh - 120px); display: flex; flex-direction: column; overflow: hidden;">
+    
+    <!-- Header: Stats & Progress -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: white; padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--card-shadow);">
+        <div>
+            <span id="currentSectionName" style="background: rgba(37, 99, 235, 0.1); color: var(--primary-color); padding: 0.4rem 1rem; border-radius: 20px; font-weight: 700; font-size: 0.9rem; text-transform: uppercase;">Quantitative</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2rem;">
+            <div style="text-align: right;">
+                <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Time Remaining</p>
+                <p id="sectionTimer" style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--danger-color); font-variant-numeric: tabular-nums;">10:00</p>
+            </div>
+            <div style="text-align: right;">
+                <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Progress</p>
+                <p id="progressText" style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">Question 1/10</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Container -->
+    <div id="questionWrapper" class="card" style="flex: 1; display: flex; flex-direction: column; padding: 3rem; position: relative; overflow-y: auto;">
+        <div id="loadingState" style="position: absolute; inset: 0; background: white; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div class="spinner" style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <p style="margin-top: 1rem; font-weight: 500;">AI is generating your custom aptitude test...</p>
+        </div>
+
+        <div id="questionContent" class="hidden">
+            <h2 id="questionText" style="font-size: 1.5rem; line-height: 1.4; margin-bottom: 2.5rem; color: var(--text-primary);">Loading question...</h2>
+            
+            <div id="optionsList" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                <!-- Options will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Controls -->
+    <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <button id="prevBtn" class="btn-secondary" onclick="prevQuestion()" disabled>Previous</button>
+        <div style="display: flex; gap: 1rem;">
+             <button id="nextBtn" class="btn-primary" onclick="nextQuestion()">Next Question</button>
+             <button id="submitSectionBtn" class="btn-primary hidden" style="background: var(--success-color);" onclick="submitSection()">Submit Section & Continue</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    .option-card {
+        border: 2px solid var(--border-color);
+        padding: 1.25rem 1.5rem;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .option-card:hover { border-color: var(--primary-color); background: rgba(37, 99, 235, 0.02); }
+    .option-card.selected { border-color: var(--primary-color); background: rgba(37, 99, 235, 0.08); color: var(--primary-color); }
+
+    .option-letter {
+        width: 28px;
+        height: 28px;
+        background: var(--bg-secondary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        border: 1px solid var(--border-color);
+    }
+    .option-card.selected .option-letter { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let testData = null;
+    let currentSectionIdx = 0;
+    let currentQuestionIdx = 0;
+    let userAnswers = {}; // { q_id: selected_option }
+    let sectionTimerInterval = null;
+    let remainingTime = 600; // 10 mins in seconds
+    let sessionId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const config = JSON.parse(localStorage.getItem('interview_config') || '{}');
+        if (!config.aptitudeEnabled) {
+            window.location.href = '/dashboard';
+            return;
+        }
+
+        try {
+            const resp = await fetch('/api/aptitude/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    role: config.role,
+                    sections: config.aptitudeSections
+                })
+            });
+            const data = await resp.json();
+            testData = data.questions;
+            sessionId = data.session_id;
+            
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('questionContent').classList.remove('hidden');
+            
+            startSection();
+        } catch (error) {
+            console.error(error);
+            alert("Failed to generate aptitude test. Returning to dashboard.");
+            window.location.href = '/dashboard';
+        }
+    });
+
+    function startSection() {
+        currentQuestionIdx = 0;
+        remainingTime = 600;
+        renderQuestion();
+        resetTimer();
+    }
+
+    function resetTimer() {
+        if (sectionTimerInterval) clearInterval(sectionTimerInterval);
+        
+        sectionTimerInterval = setInterval(() => {
+            remainingTime--;
+            if (remainingTime <= 0) {
+                clearInterval(sectionTimerInterval);
+                submitSection(); // Auto-submit on timeout
+            }
+            updateTimerDisplay();
+        }, 1000);
+        updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+        const mins = String(Math.floor(remainingTime / 60)).padStart(2, '0');
+        const secs = String(remainingTime % 60).padStart(2, '0');
+        document.getElementById('sectionTimer').innerText = `${mins}:${secs}`;
+    }
+
+    function renderQuestion() {
+        const section = testData.sections[currentSectionIdx];
+        const question = section.questions[currentQuestionIdx];
+        
+        document.getElementById('currentSectionName').innerText = section.name || "Aptitude Section";
+        document.getElementById('progressText').innerText = `Question ${currentQuestionIdx + 1}/${section.questions.length}`;
+        document.getElementById('questionText').innerText = question.text || "Loading problem statement...";
+        
+        const optionsList = document.getElementById('optionsList');
+        optionsList.innerHTML = '';
+        
+        const options = question.options || [];
+        options.forEach((opt, idx) => {
+            const letter = String.fromCharCode(65 + idx);
+            const card = document.createElement('div');
+            card.className = `option-card ${userAnswers[question.id] === opt ? 'selected' : ''}`;
+            card.innerHTML = `<div class="option-letter">${letter}</div> <span>${opt}</span>`;
+            card.onclick = () => selectOption(question.id, opt, card);
+            optionsList.appendChild(card);
+        });
+
+        // Toggle Buttons
+        document.getElementById('prevBtn').disabled = currentQuestionIdx === 0;
+        
+        if (currentQuestionIdx === section.questions.length - 1) {
+            document.getElementById('nextBtn').classList.add('hidden');
+            document.getElementById('submitSectionBtn').classList.remove('hidden');
+            
+            // If it's the final section, change text
+            if (currentSectionIdx === testData.sections.length - 1) {
+                document.getElementById('submitSectionBtn').innerText = "Finish Test & View Results";
+            } else {
+                document.getElementById('submitSectionBtn').innerText = "Submit Section & Continue";
+            }
+        } else {
+            document.getElementById('nextBtn').classList.remove('hidden');
+            document.getElementById('submitSectionBtn').classList.add('hidden');
+        }
+    }
+
+    function selectOption(qId, val, el) {
+        userAnswers[qId] = val;
+        document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+    }
+
+    function nextQuestion() {
+        if (currentQuestionIdx < testData.sections[currentSectionIdx].questions.length - 1) {
+            currentQuestionIdx++;
+            renderQuestion();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentQuestionIdx > 0) {
+            currentQuestionIdx--;
+            renderQuestion();
+        }
+    }
+
+    async function submitSection() {
+        if (currentSectionIdx < testData.sections.length - 1) {
+            // Confirm transition if time is left
+            if (remainingTime > 0 && !confirm("Are you sure you want to finalize this section? You won't be able to come back.")) return;
+            
+            currentSectionIdx++;
+            startSection();
+        } else {
+            finishTest();
+        }
+    }
+
+    async function finishTest() {
+        document.getElementById('loadingState').innerHTML = `<div class="spinner"></div><p style="margin-top:1rem;">Evaluating your answers...</p>`;
+        document.getElementById('loadingState').classList.remove('hidden');
+
+        try {
+            // We need a dummy interview ID if we haven't started one yet, 
+            // or we use a temporary placeholder.
+            // Let's create an 'Aptitude Only' or placeholder entry if needed.
+            // But usually startPractice() will be called first.
+            
+            const config = JSON.parse(localStorage.getItem('interview_config') || '{}');
+            const interview_id = localStorage.getItem('current_interview_id');
+
+            const resp = await fetch('/api/aptitude/evaluate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    answers: userAnswers,
+                    interview_id: interview_id
+                })
+            });
+            const results = await resp.json();
+            
+            // Store results in session/local storage for report page fallback
+            localStorage.setItem('last_aptitude_results', JSON.stringify(results));
+            if (interview_id) {
+                window.location.href = `/aptitude-report?interview_id=${interview_id}`;
+            } else {
+                window.location.href = '/aptitude-report';
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error evaluating test. Please try again.");
+            document.getElementById('loadingState').classList.add('hidden');
+        }
+    }
+</script>
+{% endblock %}

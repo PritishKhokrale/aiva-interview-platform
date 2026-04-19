@@ -1,0 +1,37 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Node / JS
+node_modules/
+.npm
+npm-debug.log
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Supabase Local
+supabase/.temp/
+
+# Meeting UI specific
+database.sqlite
+recordings/
+
+# Temp
+scratch/

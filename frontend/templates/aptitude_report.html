@@ -1,0 +1,251 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate-fade-in" style="max-width: 1000px; margin: 0 auto; padding-bottom: 50px;">
+    
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Aptitude Analysis</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary);">Here is a detailed breakdown of your cognitive performance.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem; margin-bottom: 3rem;">
+        <!-- Left Column: Overall Score & Feedback -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div class="card" style="text-align: center; padding: 3rem 2rem;">
+                <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Overall Score</p>
+                <div style="position: relative; margin: 1.5rem auto; width: 160px; height: 160px;">
+                    <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" stroke-width="3" />
+                        <path id="scoreCircle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-dasharray="0, 100" />
+                    </svg>
+                    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 800; color: var(--text-primary);">
+                        <span id="overallScore">0</span>%
+                    </div>
+                </div>
+                <p id="overallVerdict" style="margin: 0; font-weight: 600; font-size: 1rem; color: var(--success-color);">Excellent Work!</p>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="20" fill="none" stroke="var(--primary-color)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                    AI Insights
+                </h3>
+                <p id="aiFeedback" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); margin: 0;">
+                    Loading feedback...
+                </p>
+            </div>
+        </div>
+
+        <!-- Right Column: Chart & Breakdown -->
+        <div class="card" style="display: flex; flex-direction: column;">
+            <h3 style="margin-bottom: 1.5rem; font-size: 1.1rem;">Section-wise Performance</h3>
+            <div style="flex: 1; min-height: 300px; display: flex; align-items: center; justify-content: center;">
+                <canvas id="aptitudeChart"></canvas>
+            </div>
+            
+            <div id="sectionBreakdown" style="margin-top: 2rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                <!-- Section items will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Question Analysis -->
+    <div style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.8rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">Detailed Question Analysis</h2>
+        <div id="detailedAnalysisContainer" style="display: flex; flex-direction: column; gap: 2rem;">
+            <!-- Question blocks will be injected here via JS -->
+        </div>
+    </div>
+
+    <!-- Final Action -->
+    <div style="background: white; border-radius: 12px; border: 1px solid var(--border-color); padding: 2rem; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--card-shadow);">
+        <div style="max-width: 60%;">
+            <h3 style="margin-bottom: 0.5rem;">Ready for the Interview?</h3>
+            <p style="margin: 0; font-size: 0.95rem; color: var(--text-secondary);">Your aptitude results have been saved. You can now proceed to the AI Face-to-Face Interview whenever you're ready.</p>
+        </div>
+        <div id="actionButtons" style="display: flex; gap: 1rem;">
+            <button class="btn-secondary" onclick="window.location.href='/dashboard'">Exit to Dashboard</button>
+            <button id="primaryActionBtn" class="btn-primary" onclick="handlePrimaryAction()" style="padding: 1rem 2.5rem; font-size: 1rem; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">Start AI Interview</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let results = null;
+        const jinjaResults = {{ results | tojson if results else 'null' }};
+        if (jinjaResults) {
+            results = jinjaResults;
+        } else {
+            results = JSON.parse(localStorage.getItem('last_aptitude_results') || '{}');
+        }
+        
+        if (!results || Object.keys(results).length === 0) {
+            window.location.href = '/dashboard';
+            return;
+        }
+
+        // 1. Overall Score Animation
+        document.getElementById('overallScore').innerText = results.overall_score;
+        document.getElementById('scoreCircle').setAttribute('stroke-dasharray', `${results.overall_score}, 100`);
+        
+        // 2. Feedback
+        document.getElementById('aiFeedback').innerText = results.feedback || "Good performance on the aptitude round.";
+        
+        // 3. Verdict text based on score
+        const verdict = document.getElementById('overallVerdict');
+        if(results.overall_score >= 80) { verdict.innerText = "Exceptional Performance!"; verdict.style.color = "#10B981"; }
+        else if(results.overall_score >= 60) { verdict.innerText = "Strong Potential!"; verdict.style.color = "var(--primary-color)"; }
+        else { verdict.innerText = "Needs Improvement"; verdict.style.color = "#ea580c"; }
+
+        // 4. Section Breakdown & Chart
+        const ctx = document.getElementById('aptitudeChart').getContext('2d');
+        const sections = Object.keys(results.section_scores);
+        const scores = sections.map(s => results.section_scores[s].percentage);
+        
+        const breakdownDiv = document.getElementById('sectionBreakdown');
+        sections.forEach((s, idx) => {
+            const data = results.section_scores[s];
+            const item = document.createElement('div');
+            item.style.textAlign = 'center';
+            item.innerHTML = `
+                <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">${s}</p>
+                <p style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">${data.correct}/${data.total}</p>
+            `;
+            breakdownDiv.appendChild(item);
+        });
+
+        new Chart(ctx, {
+            type: 'polarArea', // Using polarArea for strengths/weaknesses visualization
+            data: {
+                labels: sections,
+                datasets: [{
+                    data: scores,
+                    backgroundColor: [
+                        'rgba(37, 99, 235, 0.6)', // Primary Blue
+                        'rgba(168, 85, 247, 0.6)', // Purple
+                        'rgba(16, 185, 129, 0.6)'  // Emerald
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 20, font: { weight: '600' } }
+                    }
+                }
+            }
+        });
+
+        // 5. Render Detailed Analysis
+        const detailedContainer = document.getElementById('detailedAnalysisContainer');
+        detailedContainer.innerHTML = '';
+        
+        sections.forEach(s => {
+            const data = results.section_scores[s];
+            if (data.details && data.details.length > 0) {
+                // Create Section Header
+                const secHeader = document.createElement('h3');
+                secHeader.style.margin = '0 0 1rem 0';
+                secHeader.style.color = 'var(--text-primary)';
+                secHeader.innerText = `${s} Section`;
+                detailedContainer.appendChild(secHeader);
+                
+                data.details.forEach((q, qIdx) => {
+                    const block = document.createElement('div');
+                    block.className = 'card';
+                    block.style.padding = '1.5rem';
+                    block.style.marginBottom = '1.5rem';
+                    block.style.borderLeft = q.is_correct ? '4px solid var(--success-color)' : '4px solid var(--danger-color)';
+                    
+                    const qHeaderDiv = document.createElement('div');
+                    qHeaderDiv.style.display = 'flex';
+                    qHeaderDiv.style.justifyContent = 'space-between';
+                    qHeaderDiv.style.alignItems = 'flex-start';
+                    qHeaderDiv.innerHTML = `<p style="font-weight: 600; margin: 0 0 1rem 0; font-size: 1.05rem;">Q${qIdx + 1}: ${q.question}</p>`;
+                    
+                    const marker = document.createElement('span');
+                    if (q.is_correct) {
+                        marker.innerHTML = `✔️ Correct`;
+                        marker.style.background = 'rgba(16, 185, 129, 0.1)';
+                        marker.style.color = 'var(--success-color)';
+                    } else {
+                        marker.innerHTML = `❌ Incorrect`;
+                        marker.style.background = 'rgba(239, 68, 68, 0.1)';
+                        marker.style.color = 'var(--danger-color)';
+                    }
+                    marker.style.padding = '4px 10px';
+                    marker.style.borderRadius = '20px';
+                    marker.style.fontSize = '0.8rem';
+                    marker.style.fontWeight = '700';
+                    qHeaderDiv.appendChild(marker);
+                    
+                    block.appendChild(qHeaderDiv);
+                    
+                    // Answers Div
+                    const ansDiv = document.createElement('div');
+                    ansDiv.style.display = 'flex';
+                    ansDiv.style.gap = '2rem';
+                    ansDiv.style.marginBottom = '1rem';
+                    
+                    const yourAns = document.createElement('div');
+                    yourAns.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Your Answer</span><p style="margin: 4px 0 0 0; font-weight: 600; color: ${q.is_correct ? 'var(--success-color)' : 'var(--danger-color)'};">${q.user_answer}</p>`;
+                    ansDiv.appendChild(yourAns);
+                    
+                    if (!q.is_correct) {
+                        const correctAns = document.createElement('div');
+                        correctAns.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Correct Answer</span><p style="margin: 4px 0 0 0; font-weight: 600; color: var(--success-color);">${q.correct_answer}</p>`;
+                        ansDiv.appendChild(correctAns);
+                    }
+                    
+                    block.appendChild(ansDiv);
+                    
+                    // Explanation
+                    const expDiv = document.createElement('div');
+                    expDiv.style.background = 'var(--bg-secondary)';
+                    expDiv.style.padding = '1rem';
+                    expDiv.style.borderRadius = '8px';
+                    expDiv.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; display:flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg> AI Explanation</span><p style="margin: 6px 0 0 0; font-size: 0.9rem; font-style: italic; color: var(--text-secondary);">${q.explanation}</p>`;
+                    block.appendChild(expDiv);
+                    
+                    detailedContainer.appendChild(block);
+                });
+            }
+        });
+        
+    });
+
+    function handlePrimaryAction() {
+        const config = JSON.parse(localStorage.getItem('interview_config') || '{}');
+        if (config.sessionMode === 'apti') {
+            window.location.href = '/dashboard';
+        } else {
+            window.location.href = '/interview';
+        }
+    }
+
+    // Set initial button text based on mode
+    document.addEventListener('DOMContentLoaded', () => {
+        const config = JSON.parse(localStorage.getItem('interview_config') || '{}');
+        const btn = document.getElementById('primaryActionBtn');
+        if (config.sessionMode === 'apti') {
+            btn.innerText = "Finish & Return Home";
+            document.querySelector('#actionButtons').previousElementSibling.querySelector('p').innerText = "Your aptitude results have been saved. You can now return to the dashboard to review your performance.";
+            document.querySelector('#actionButtons').previousElementSibling.querySelector('h3').innerText = "Test Complete!";
+        }
+    });
+</script>
+{% endblock %}

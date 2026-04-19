@@ -1,0 +1,404 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate-fade-in" style="max-width: 900px; margin: 0 auto; padding-bottom: 40px;">
+    
+    <!-- STEP 1: ROLE SELECTION -->
+    <div id="step-roles">
+        <h1 style="display:flex; align-items:center; gap:10px; font-size:1.75rem; color:#1f2937;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Roles
+        </h1>
+        <div class="roles-grid">
+            <div class="role-btn" onclick="selectRole('Account Manager')">Account Manager</div>
+            <div class="role-btn" onclick="selectRole('Financial Analyst')">Financial Analyst</div>
+            <div class="role-btn" onclick="selectRole('Product Manager')">Product Manager</div>
+            
+            <div class="role-btn" onclick="selectRole('Sales Executive')">Sales Executive</div>
+            <div class="role-btn" onclick="selectRole('Web Designer')">Web Designer</div>
+            <div class="role-btn" onclick="selectRole('Software Engineer')">Software Engineer</div>
+            
+            <div class="role-btn" onclick="selectRole('Digital Marketing Specialist')">Digital Marketing Specialist</div>
+            <div class="role-btn" onclick="selectRole('Project Manager')">Project Manager</div>
+            <div class="role-btn" onclick="selectRole('Marketing Manager')">Marketing Manager</div>
+            
+            <div class="role-btn" onclick="selectRole('Data Scientist')">Data Scientist</div>
+            <div class="role-btn" onclick="selectRole('Data Analyst')">Data Analyst</div>
+            <div class="role-btn" onclick="selectRole('Customer Service Representative')">Customer Service Representative</div>
+            
+            <div class="role-btn" onclick="selectRole('Full Stack Developer')">Full Stack Developer</div>
+            <div class="role-btn" onclick="selectRole('Cybersecurity Analyst')">Cybersecurity Analyst</div>
+            <div class="role-btn" onclick="selectRole('Business Analyst')">Business Analyst</div>
+        </div>
+    </div>
+
+    <!-- STEP 2: INTERVIEW DETAILS -->
+    <div id="step-details" class="hidden">
+        <h2 style="margin-bottom: 20px; font-size:1.5rem; color:#1f2937;">Interview Details</h2>
+        
+        <div class="card" style="border-radius: 8px; padding: 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+            <!-- Header -->
+            <div class="role-header" id="selected-role-title">
+                Data Analyst
+            </div>
+
+            <div style="padding: 20px;">
+                <!-- Session Mode Selector -->
+                <div class="setup-row" style="margin-bottom: 30px;">
+                    <label class="setup-label">Select Session Type <span>*</span></label>
+                    <div class="options-flex" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="select-card mode-card" onclick="selectSessionMode(this, 'apti')">
+                            Aptitude Test
+                            <span>APTI</span>
+                        </div>
+                        <div class="select-card mode-card active primary-active" onclick="selectSessionMode(this, 'ai')">
+                            AI Interview
+                            <span>AI</span>
+                        </div>
+                        <div class="select-card mode-card" onclick="selectSessionMode(this, 'combined')">
+                            Combined Prep
+                            <span>Full Mock</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Live Meeting Message -->
+                <div id="liveOptions" class="setup-row hidden" style="margin-bottom: 30px; text-align: center; padding: 20px; background: rgba(59, 130, 246, 0.1); border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                    <h3 style="color: #1d4ed8; margin-top: 0;">Live Interview selected</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 0;">You will enter a real-time collaborative meeting room with code editing and video functionality. Invite a peer to interview you!</p>
+                </div>
+                <!-- Interview Specific Options -->
+                <div id="aiOptions">
+                    <!-- Resume Base Option -->
+                    <div class="setup-row">
+                        <div style="display: flex; gap: 20px; align-items: center; justify-content: space-between;">
+                            <div style="flex:1;">
+                                <label style="font-weight:700; margin-bottom:5px; display:block; font-size:1.05rem;">Resume Based Interview: (Optional)</label>
+                                <p style="margin:0; font-size:0.85rem; color:var(--text-secondary);">Get interview questions personalized to your resume.</p>
+                            </div>
+                            <button class="btn-primary" onclick="toggleResumeSetup()">Upload Resume</button>
+                        </div>
+                    </div>
+
+                    <!-- Hidden Resume/JD Setup -->
+                    <div id="resumeSetupSection" class="hidden" style="margin-bottom: 25px; border: 1px solid #d1d5db; border-radius: 8px; padding: 15px; background: #f9fafb;">
+                        <div class="tabs" style="margin-bottom: 15px;">
+                            <button class="tab-btn active" onclick="switchThemeTab('resumeTab', this)">Upload Resume</button>
+                            <button class="tab-btn" onclick="switchThemeTab('jdTab', this)">Job Description</button>
+                        </div>
+                        
+                        <div id="resumeTab" class="tab-content active">
+                            <form id="uploadForm" action="/api/upload/resume" method="POST" enctype="multipart/form-data">
+                                <input type="file" id="resume" name="file" style="display: none;" accept=".pdf,.docx,.jpg,.png" onchange="updateFileName(this)">
+                                <label for="resume" class="btn-secondary" style="display: inline-block;">Choose File</label>
+                                <span id="fileName" style="margin-left: 10px; font-weight: 500; font-size: 0.875rem;"></span>
+                            </form>
+                        </div>
+                        
+                        <div id="jdTab" class="tab-content">
+                            <textarea id="jobDescriptionText" class="form-control" rows="4" placeholder="e.g. Paste job description here..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Select Duration -->
+                    <div class="setup-row" style="margin-top: 25px;">
+                        <label class="setup-label">Interview Duration</label>
+                        <div class="options-flex">
+                            <div class="select-card duration-card" onclick="selectDuration(this, 'short')">
+                                Short
+                                <span>5 Questions</span>
+                            </div>
+                            <div class="select-card duration-card active primary-active" onclick="selectDuration(this, 'standard')">
+                                Standard
+                                <span>10 Questions</span>
+                            </div>
+                            <div class="select-card duration-card" onclick="selectDuration(this, 'intensive')">
+                                Intensive
+                                <span>15+ Questions</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Select Focus Area -->
+                    <div class="setup-row" style="margin-top: 25px;">
+                        <label class="setup-label">Focus Area <span>*</span></label>
+                        <div class="options-flex">
+                            <div class="select-card round-card" onclick="selectRound(this, 'mixed', 'Warm Up')">
+                                Mixed
+                                <span>All-round</span>
+                            </div>
+                            <div class="select-card round-card active primary-active" onclick="selectRound(this, 'technical', 'Role Related')">
+                                Technical
+                                <span>Role Specific</span>
+                            </div>
+                            <div class="select-card round-card" onclick="selectRound(this, 'hr', 'Behavioral')">
+                                HR
+                                <span>Behavioral</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shared Difficulty (Applies to both) -->
+                <div class="setup-row" style="margin-top: 25px;">
+                    <label class="setup-label">Global Difficulty Level</label>
+                    <div class="options-flex">
+                        <div class="select-card difficulty-card" onclick="selectDifficulty(this, 'easy')">
+                            Easy
+                            <span>Foundational</span>
+                        </div>
+                        <div class="select-card difficulty-card active primary-active" onclick="selectDifficulty(this, 'medium')">
+                            Medium
+                            <span>Intermediate</span>
+                        </div>
+                        <div class="select-card difficulty-card" onclick="selectDifficulty(this, 'hard')">
+                            Hard
+                            <span>Advanced</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aptitude Selection (Visible if combined or apti) -->
+                <div id="aptitudeOptions" class="setup-row" style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed var(--border-color);">
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 4px; display: block;">Aptitude Configuration</label>
+                        <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Test your Quant, Logical, and Verbal skills.</p>
+                    </div>
+
+                    <div style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+                        <label class="setup-label" style="margin-bottom: 15px;">Select All Sections to Include</label>
+                        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="aptSection" value="Quantitative" checked>
+                                <span class="checkmark"></span>
+                                Quantitative
+                            </label>
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="aptSection" value="Logical" checked>
+                                <span class="checkmark"></span>
+                                Logical
+                            </label>
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="aptSection" value="Verbal" checked>
+                                <span class="checkmark"></span>
+                                Verbal
+                            </label>
+                        </div>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); font-style: italic;">Note: Each section will have 10 AI-generated questions and a 10-minute timer.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px; padding: 20px; border-top: 1px solid var(--border-color); margin-top: 10px;">
+                <button class="btn-primary" onclick="startPractice()" style="font-size: 0.95rem; text-transform: uppercase;">START PRACTICE</button>
+                <button class="btn-outline" onclick="cancelSetup()" style="font-size: 0.95rem; text-transform: uppercase;">CANCEL</button>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // State Memory
+    let currentRole = "";
+    let currentMode = "resume";
+    let selectedDifficulty = "medium";
+    let selectedDuration = "standard";
+    let selectedType = "technical";
+    let sessionMode = "ai"; // ai, apti, combined
+
+    // Defaults initialized when UI opens
+    function initDefaults() {
+        updateVisibility();
+    }
+
+    function selectSessionMode(el, mode) {
+        document.querySelectorAll('.mode-card').forEach(e => e.classList.remove('active', 'primary-active'));
+        el.classList.add('active', 'primary-active');
+        sessionMode = mode;
+        updateVisibility();
+    }
+
+    function updateVisibility() {
+        const aiOptions = document.getElementById('aiOptions');
+        const aptiOptions = document.getElementById('aptitudeOptions');
+        const liveOptions = document.getElementById('liveOptions');
+        
+        // Reset visually
+        aiOptions.classList.add('hidden');
+        aptiOptions.classList.add('hidden');
+        liveOptions.classList.add('hidden');
+        
+        if (sessionMode === 'ai') {
+            aiOptions.classList.remove('hidden');
+        } else if (sessionMode === 'apti') {
+            aptiOptions.classList.remove('hidden');
+        } else if (sessionMode === 'combined') {
+            aiOptions.classList.remove('hidden');
+            aptiOptions.classList.remove('hidden');
+        } else if (sessionMode === 'live') {
+            liveOptions.classList.remove('hidden');
+        }
+    }
+
+    // Step Toggling
+    function selectRole(role) {
+        currentRole = role;
+        document.getElementById('selected-role-title').innerText = role;
+        
+        document.getElementById('step-roles').classList.add('hidden');
+        document.getElementById('step-details').classList.remove('hidden');
+        
+        initDefaults();
+    }
+
+    function cancelSetup() {
+        document.getElementById('step-details').classList.add('hidden');
+        document.getElementById('step-roles').classList.remove('hidden');
+    }
+
+    // Configuration Toggles
+    function toggleResumeSetup() {
+        const sect = document.getElementById('resumeSetupSection');
+        if(sect.classList.contains('hidden')){
+            sect.classList.remove('hidden');
+        } else {
+            sect.classList.add('hidden');
+        }
+    }
+
+    function toggleAptitudeSections(checkbox) {
+        const details = document.getElementById('aptitudeDetails');
+        if(checkbox.checked) details.classList.remove('hidden');
+        else details.classList.add('hidden');
+    }
+
+    function switchThemeTab(tabId, el) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        el.classList.add('active');
+
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+
+        currentMode = tabId === 'resumeTab' ? 'resume' : 'jd';
+    }
+
+    // Selection Visual Toggles
+    function selectRound(el, type, label) {
+        document.querySelectorAll('.round-card').forEach(e => e.classList.remove('active', 'primary-active'));
+        el.classList.add('active', 'primary-active');
+        selectedType = type;
+    }
+
+    function selectDifficulty(el, difficulty) {
+        document.querySelectorAll('.difficulty-card').forEach(e => e.classList.remove('active', 'primary-active'));
+        el.classList.add('active', 'primary-active');
+        selectedDifficulty = difficulty;
+    }
+
+    function selectDuration(el, duration) {
+        document.querySelectorAll('.duration-card').forEach(e => e.classList.remove('active', 'primary-active'));
+        el.classList.add('active', 'primary-active');
+        selectedDuration = duration;
+    }
+
+    // Resume Logic
+    async function updateFileName(input) {
+        if (input.files && input.files.length > 0) {
+            const file = input.files[0];
+            document.getElementById('fileName').innerText = "Processing: " + file.name + " ...";
+            
+            const formData = new FormData();
+            formData.append("file", file);
+            
+            try {
+                const response = await fetch('/api/upload/resume', { method: 'POST', body: formData });
+                const result = await response.json();
+                if (result.parsed_text) {
+                    localStorage.setItem('parsed_resume_text', result.parsed_text);
+                    document.getElementById('fileName').innerText = "Successfully processed: " + file.name;
+                } else {
+                    document.getElementById('fileName').innerText = "Error: " + (result.error || "Failed to parse");
+                }
+            } catch (error) {
+                console.error(error);
+                document.getElementById('fileName').innerText = "Upload failed.";
+            }
+        }
+    }
+
+    // Final Action
+    async function startPractice() {
+        const btn = document.querySelector('button[onclick="startPractice()"]');
+        const originalText = btn.innerText;
+        btn.innerText = "Initializing...";
+        btn.disabled = true;
+
+        // Collect Aptitude Sections
+        const aptSections = [];
+        if(sessionMode === 'apti' || sessionMode === 'combined') {
+            document.querySelectorAll('input[name="aptSection"]:checked').forEach(cb => {
+                aptSections.push(cb.value);
+            });
+            if(aptSections.length === 0) {
+                alert("Please select at least one aptitude section.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+                return;
+            }
+        }
+
+        const config = {
+            role: currentRole,
+            mode: currentMode,
+            difficulty: selectedDifficulty,
+            duration: selectedDuration,
+            type: selectedType,
+            sessionMode: sessionMode,
+            aptitudeEnabled: (sessionMode === 'apti' || sessionMode === 'combined'),
+            aptitudeSections: aptSections,
+            jdText: document.getElementById('jobDescriptionText') ? document.getElementById('jobDescriptionText').value : "",
+            parsedResume: localStorage.getItem('parsed_resume_text') || ""
+        };
+        localStorage.setItem('interview_config', JSON.stringify(config));
+
+        try {
+            // Clear previous session ID
+            localStorage.removeItem('current_interview_id');
+
+            // Pre-create the session in DB to get an ID
+            const resp = await fetch('/api/interview/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+            const data = await resp.json();
+            
+            if (data.interview_id) {
+                localStorage.setItem('current_interview_id', data.interview_id);
+                // Proceed to Interview, Aptitude, or Live Meeting
+                if(config.sessionMode === 'live') {
+                    // Redirect to the Vite standalone entry
+                    window.location.href = `http://localhost:5173/`;
+                } else if(config.aptitudeEnabled) {
+                    window.location.href = "{{ url_for('aptitude_page') }}";
+                } else {
+                    window.location.href = "{{ url_for('interview_page') }}";
+                }
+            } else {
+                throw new Error("Failed to initialize session");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error starting your session. Please check your connection.");
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+
+</script>
+{% endblock %}
