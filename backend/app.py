@@ -15,12 +15,14 @@ from routes.upload import upload_bp
 from routes.report import report_bp
 from routes.aptitude import aptitude_bp
 from routes.auth import auth_bp, login_required
+from routes.dsa import dsa_bp
 
 app.register_blueprint(interview_bp, url_prefix='/api/interview')
 app.register_blueprint(upload_bp, url_prefix='/api/upload')
 app.register_blueprint(report_bp, url_prefix='/api/report')
 app.register_blueprint(aptitude_bp, url_prefix='/api/aptitude')
 app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(dsa_bp, url_prefix='/ide')
 
 @app.route('/')
 def landing_page():
