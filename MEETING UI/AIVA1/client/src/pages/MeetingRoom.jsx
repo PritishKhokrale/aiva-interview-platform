@@ -223,7 +223,7 @@ export default function MeetingRoom() {
 
     const remoteStream = new MediaStream()
     pc.ontrack = e => {
-      e.streams[0]?.getTracks().forEach(t => remoteStream.addTrack(t))
+      remoteStream.addTrack(e.track)
       setPeers(p => ({ ...p, [targetId]: { ...p[targetId], stream: remoteStream, name: targetName } }))
     }
     pc.onicecandidate = e => {
