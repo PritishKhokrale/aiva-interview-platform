@@ -283,18 +283,31 @@ export default function MeetingRoom() {
 
     const init = async () => {
       // Get media — taken from PreJoinScreen stream passed in via onJoin
-      // localStreamRef.current is set by handlePreJoinReady before init() runs
-      const stream = localStreamRef.current
-      if (stream) { setLocalStream(stream); startAudio(stream) }
+      // Fallback: If admitted from waiting room, acquire media now
+      let stream = localStreamRef.current
+      if (!stream) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+          localStreamRef.current = stream
+          setIsVideoOff(false)
+          setIsMuted(false)
+        } catch (e) {
+          console.error('Failed to capture local media:', e)
+        }
+      }
+      
+      if (stream) { 
+        setLocalStream(stream); 
+        startAudio(stream);
+      }
 
       // Socket & WebRTC init runs here — meetingInfo already loaded during pre-join
       if (!meetingInfo) {
-        // fallback fetch in case pre-join didn't complete meetingInfo
         try {
           const r = await fetch(`/api/meetings/${meetingId}`)
           if (r.ok) {
             const m = await r.json(); setMeetingInfo(m)
-            const hosting = m.hostEmail === effectiveEmail
+            const hosting = m.hostEmail === (user?.email || searchParams.get('email') || '')
             setIsHost(hosting); setMyRole(hosting ? 'host' : 'candidate')
             if (hosting) setCanRecord(true)
           }
@@ -307,7 +320,11 @@ export default function MeetingRoom() {
 
       socket.on('connect', () => {
         setMySocketId(socket.id)
-        socket.emit('join-room', { roomId: meetingId, name: effectiveName, email: effectiveEmail })
+        socket.emit('join-room', { 
+          roomId: meetingId, 
+          name: user?.name || searchParams.get('name') || 'Guest', 
+          email: user?.email || searchParams.get('email') || '' 
+        })
       })
 
       socket.on('room-state', async ({ participants: existing, socketId: myId }) => {
