@@ -26,6 +26,16 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 def landing_page():
     return render_template('landing.html')
 
+@app.route('/login')
+def redirect_login():
+    from flask import redirect, url_for
+    return redirect(url_for('auth.login_page'))
+
+@app.route('/signup')
+def redirect_signup():
+    from flask import redirect, url_for
+    return redirect(url_for('auth.signup_page'))
+
 @app.route('/dashboard')
 @login_required
 def dashboard_page():

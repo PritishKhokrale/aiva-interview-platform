@@ -8,7 +8,7 @@ import JoinPage from './pages/JoinPage.jsx'
 import WaitingRoomPage from './pages/WaitingRoomPage.jsx'
 
 function RedirectToPythonLogin() {
-  window.location.href = 'https://aiva-python-api.onrender.com/login';
+  window.location.href = 'https://aiva-python-api.onrender.com/auth/login';
   return null;
 }
 
@@ -30,16 +30,14 @@ export default function App() {
     <Routes>
       {/* Public routes — no auth required */}
       <Route path="/login" element={<RedirectToPythonLogin />} />
-      <Route path="/join" element={<JoinPage />} />
-      <Route path="/waiting/:meetingId" element={<WaitingRoomPage />} />
-
-      {/* Meeting room — accessible by admitted candidates via URL params (Auth Bypassed for Flask Control Plane Integration) */}
-      <Route path="/meeting/:meetingId" element={<MeetingRoom />} />
-
-      {/* Protected routes */}
+      {/* Protected routes - Enforces absolute SSO gateway validation for all participants including Candidates */}
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      
+      <Route path="/join" element={<ProtectedRoute><JoinPage /></ProtectedRoute>} />
+      <Route path="/waiting/:meetingId" element={<ProtectedRoute><WaitingRoomPage /></ProtectedRoute>} />
+      <Route path="/meeting/:meetingId" element={<ProtectedRoute><MeetingRoom /></ProtectedRoute>} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
