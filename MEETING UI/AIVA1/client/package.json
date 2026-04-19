@@ -15,6 +15,7 @@
     "@tailwindcss/vite": "^4.2.1",
     "@uiw/react-codemirror": "^4.25.9",
     "autoprefixer": "^10.4.27",
+    "face-api.js": "^0.22.2",
     "framer-motion": "^12.36.0",
     "lucide-react": "^0.577.0",
     "react": "^19.2.4",

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import * as faceapi from 'face-api.js'
 
 /**
- * useFaceAnalysis — canvas-based facial expression analysis
- * Samples the local video stream every 3s, computes pixel metrics,
- * and maps them to emotion scores. No external ML library required.
+ * useFaceAnalysis — ML-based facial expression analysis using face-api.js
+ * Samples the local video stream every 3s, detects facial expressions using TensorFlow.js,
+ * and maps them to interview metrics.
  */
 export function useFaceAnalysis(localStream, isSpeaking) {
   const [metrics, setMetrics] = useState({
@@ -11,10 +12,22 @@ export function useFaceAnalysis(localStream, isSpeaking) {
     dominant: 'Focused', breakdown: { focused: 55, confident: 25, neutral: 15, stressed: 5 }
   })
   const [timeline, setTimeline] = useState([])
-  const prevFrameRef = useRef(null)
   const videoElRef = useRef(null)
 
   useEffect(() => {
+    let modelsLoaded = false
+    const loadModels = async () => {
+      try {
+        // Models are hosted in the public/models directory
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
+        await faceapi.nets.faceExpressionNet.loadFromUri('/models')
+        modelsLoaded = true
+      } catch (err) {
+        console.error("Failed to load face-api models:", err)
+      }
+    }
+    loadModels()
+
     if (!localStream) return
     const video = document.createElement('video')
     video.srcObject = localStream
@@ -22,59 +35,55 @@ export function useFaceAnalysis(localStream, isSpeaking) {
     video.play().catch(() => {})
     videoElRef.current = video
 
-    const canvas = document.createElement('canvas')
-    canvas.width = 48; canvas.height = 48
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })
-
-    const analyze = () => {
-      if (video.readyState < 2) return
+    const analyze = async () => {
+      if (video.readyState < 2 || !modelsLoaded) return
       try {
-        ctx.drawImage(video, 0, 0, 48, 48)
-        const data = ctx.getImageData(0, 0, 48, 48).data
+        const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions()
 
-        // Compute brightness & frame-to-frame movement
-        let brightness = 0, movement = 0
-        const prev = prevFrameRef.current
-        for (let i = 0; i < data.length; i += 4) {
-          const lum = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114)
-          brightness += lum
-          if (prev) movement += Math.abs(lum - prev[i / 4])
+        let focus = 50, confidence = 40, stress = 15, eyeContact = 50, dominant = 'Neutral'
+        let breakdown = { focused: 0, confident: 0, neutral: 100, stressed: 0 }
+
+        if (detections) {
+          const expr = detections.expressions
+          
+          // face-api.js returns values from 0.0 to 1.0 for each emotion
+          const neutral = expr.neutral || 0
+          const happy = expr.happy || 0
+          const angry = expr.angry || 0
+          const fearful = expr.fearful || 0
+          const sad = expr.sad || 0
+
+          // Map actual ML emotions to meeting metrics
+          stress = clamp((angry + fearful * 1.5 + sad) * 100 + 10, 0, 100)
+          
+          const speakBoost = isSpeaking ? 15 : 0
+          confidence = clamp((happy * 1.2 + neutral * 0.8) * 100 + speakBoost, 0, 100)
+          
+          focus = clamp((neutral + happy * 0.5) * 100 - (angry * 50), 20, 100)
+          eyeContact = clamp(focus - 5 + (isSpeaking ? 10 : 0), 20, 100)
+
+          const scores = { focused: focus, confident: confidence, neutral: neutral * 100, stressed: stress }
+          dominant = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0]
+
+          const total = Object.values(scores).reduce((s, v) => s + v, 0) || 1
+          breakdown = Object.fromEntries(Object.entries(scores).map(([k, v]) => [k, Math.round(v / total * 100)]))
+        } else {
+          // No face detected - drop focus and eye contact
+          focus = 10; eyeContact = 0; dominant = 'Away'
+          breakdown = { focused: 0, confident: 0, neutral: 0, stressed: 0 }
         }
-        const pixelCount = data.length / 4
-        brightness = brightness / pixelCount          // 0-255
-        movement = movement / pixelCount              // avg pixel diff
-
-        // Store frame
-        const lums = new Float32Array(pixelCount)
-        for (let i = 0; i < data.length; i += 4) lums[i / 4] = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114
-        prevFrameRef.current = lums
-
-        // Normalize movement: 0 = still, 40+ = very active
-        const normMov = Math.min(1, movement / 40)
-        const normBri = Math.min(1, brightness / 180)
-        const speakBoost = isSpeaking ? 0.12 : 0
-        const rand = () => (Math.random() - 0.5) * 6
-
-        const focus      = clamp(90 - normMov * 40 + rand(), 20, 100)
-        const confidence = clamp(65 + speakBoost * 100 + normBri * 15 + rand(), 25, 100)
-        const stress     = clamp(normMov * 50 + rand(), 0, 80)
-        const eyeContact = clamp(88 - normMov * 30 + rand(), 20, 100)
-
-        // Dominant emotion
-        const scores = { focused: focus, confident: confidence, neutral: clamp(80 - stress - normMov * 20, 0, 60), stressed: stress }
-        const dominant = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0]
-        const total = Object.values(scores).reduce((s, v) => s + v, 0)
-        const breakdown = Object.fromEntries(Object.entries(scores).map(([k, v]) => [k, Math.round(v / total * 100)]))
 
         setMetrics({ focus, confidence, stress, eyeContact, dominant, breakdown })
         setTimeline(prev => [...prev.slice(-60), {
           time: Date.now(), focus, confidence, stress, eyeContact, dominant
         }])
-      } catch {}
+      } catch (err) {
+        console.error("Analysis error:", err)
+      }
     }
 
     const id = setInterval(analyze, 3000)
-    setTimeout(analyze, 500) // immediate first sample
+    setTimeout(analyze, 1000) // Initial sample shortly after load
     return () => {
       clearInterval(id)
       video.srcObject = null
