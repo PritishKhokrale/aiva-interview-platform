@@ -146,11 +146,11 @@
                     <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">{{ qa.expected_answer }}</p>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <div><strong style="font-size: 0.8rem; text-transform: uppercase; color: #64748b;">Correctness</strong><br><span style="font-weight: 500; font-size: 0.9rem;">{{ qa.evaluation.correctness | default('N/A') if qa.evaluation is mapping else qa.evaluation }}</span></div>
-                    <div><strong style="font-size: 0.8rem; text-transform: uppercase; color: #64748b;">Tech Depth</strong><br><span style="font-weight: 500; font-size: 0.9rem;">{{ qa.evaluation.depth | default('N/A') if qa.evaluation is mapping else 'N/A' }}</span></div>
-                    <div><strong style="font-size: 0.8rem; text-transform: uppercase; color: #64748b;">Communication</strong><br><span style="font-weight: 500; font-size: 0.9rem;">{{ qa.evaluation.communication | default('N/A') if qa.evaluation is mapping else 'N/A' }}</span></div>
-                    <div><strong style="font-size: 0.8rem; text-transform: uppercase; color: #64748b;">Confidence</strong><br><span style="font-weight: 500; font-size: 0.9rem;">{{ qa.evaluation.confidence | default('N/A') if qa.evaluation is mapping else 'N/A' }}</span></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem; background: var(--bg-secondary); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div><strong style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary);">Correctness</strong><br><span style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">{{ qa.evaluation.correctness | default('N/A') if qa.evaluation is mapping else qa.evaluation }}</span></div>
+                    <div><strong style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary);">Tech Depth</strong><br><span style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">{{ qa.evaluation.depth | default('N/A') if qa.evaluation is mapping else 'N/A' }}</span></div>
+                    <div><strong style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary);">Communication</strong><br><span style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">{{ qa.evaluation.communication | default('N/A') if qa.evaluation is mapping else 'N/A' }}</span></div>
+                    <div><strong style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary);">Confidence</strong><br><span style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">{{ qa.evaluation.confidence | default('N/A') if qa.evaluation is mapping else 'N/A' }}</span></div>
                 </div>
 
                 <div style="border-left: 3px solid #f59e0b; padding-left: 1rem; margin-top: 1rem;">

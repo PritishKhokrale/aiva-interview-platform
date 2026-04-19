@@ -17,40 +17,39 @@ def get_report(interview_id):
             
             if resp.data and len(resp.data) > 0:
                 report_row = resp.data[0]
-                interview_row = report_row.get("interviews", {})
+                interview_row = report_row.get("interviews") or {}
                 
                 # Unpack metrics and extended data payload dynamically
-                metrics_dict = report_row.get("metrics", {})
-                extended = metrics_dict.pop("extended_data", {})
+                metrics_dict = report_row.get("metrics") or {}
+                extended = metrics_dict.pop("extended_data", {}) if isinstance(metrics_dict, dict) else {}
                 
                 # Clean up history and question analysis for better display
-                history = interview_row.get("history", [])
+                history = interview_row.get("history", []) if isinstance(interview_row, dict) else []
                 
                 # Sanitize question analysis: ensure empty answers are handled
-                qa_list = extended.get("question_analysis", [])
+                qa_list = extended.get("question_analysis", []) if isinstance(extended, dict) else []
                 for qa in qa_list:
                     ans = qa.get("candidate_answer", "")
                     if ans and isinstance(ans, str):
-                        # If answers are just spaces or tiny snippets that are empty, clear them
                         if not ans.strip():
                             qa["candidate_answer"] = None
                     elif not ans:
                         qa["candidate_answer"] = None
 
                 eval_data = {
-                    "role": interview_row.get("role", "Software Engineer"),
+                    "role": interview_row.get("role", "Software Engineer") if isinstance(interview_row, dict) else "Software Engineer",
                     "overall_score": report_row.get("overall_score", 0),
                     "summary": {
                         "overview": report_row.get("summary", ""),
-                        "type": extended.get("type", "Unknown"),
-                        "difficulty_faced": extended.get("difficulty_faced", "Unknown")
+                        "type": extended.get("type", "Unknown") if isinstance(extended, dict) else "Unknown",
+                        "difficulty_faced": extended.get("difficulty_faced", "Unknown") if isinstance(extended, dict) else "Unknown"
                     },
-                    "strengths": report_row.get("strengths", []),
-                    "weaknesses": report_row.get("weaknesses", []),
-                    "metrics": metrics_dict,
-                    "red_flags": extended.get("red_flags", []),
-                    "final_verdict": extended.get("final_verdict", "Borderline"),
-                    "improvement_plan": extended.get("improvement_plan", {}),
+                    "strengths": report_row.get("strengths") or [],
+                    "weaknesses": report_row.get("weaknesses") or [],
+                    "metrics": metrics_dict if isinstance(metrics_dict, dict) else {},
+                    "red_flags": extended.get("red_flags", []) if isinstance(extended, dict) else [],
+                    "final_verdict": extended.get("final_verdict", "Borderline") if isinstance(extended, dict) else "Borderline",
+                    "improvement_plan": extended.get("improvement_plan", {}) if isinstance(extended, dict) else {},
                     "question_analysis": qa_list
                 }
                 
