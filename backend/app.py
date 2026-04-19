@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv() # Load from .env file
 
-from flask import Flask, render_template, session, request, redirect, url_for
+from flask import Flask, render_template, session, request, redirect, url_for, flash
 from flask_cors import CORS
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')

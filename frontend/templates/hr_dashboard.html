@@ -96,9 +96,9 @@
                         <span style="display: block; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Status</span>
                         <span style="font-size: 0.85rem; font-weight: 600; color: #34d399;">{{ app.status }}</span>
                     </div>
-                    <button class="btn-primary" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">
+                    <a href="{{ url_for('hr.review_candidate', candidate_id=app.candidate_id) }}" class="btn-primary" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; text-decoration: none; display: inline-block;">
                         Review Profile
-                    </button>
+                    </a>
                 </div>
             </div>
             {% endfor %}

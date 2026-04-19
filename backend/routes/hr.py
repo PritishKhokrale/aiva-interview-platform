@@ -70,3 +70,65 @@ def create_drive():
         flash(f"Failed to create Job Drive. Make sure the database table exists. {str(e)}", "error")
         
     return redirect(url_for('hr.config_page'))
+
+@hr_bp.route('/candidate/<candidate_id>', methods=['GET'])
+@hr_required
+def review_candidate(candidate_id):
+    candidate_profile = None
+    interviews = []
+    
+    # Aggregation Stats
+    total_tests = 0
+    avg_score = 0
+    highest_score = 0
+    recommended_roles = []
+    
+    try:
+        supabase = get_supabase_client(access_token=session.get('access_token'))
+        
+        # 1. Fetch Candidate Base Info
+        cand_res = supabase.table('candidates').select('*').eq('id', candidate_id).single().execute()
+        candidate_profile = cand_res.data
+        
+        # 2. Fetch all Interviews for this candidate to calculate stats
+        # Require 'candidates' RLS to be open, and 'interviews' RLS to be open for HR
+        int_res = supabase.table('interviews').select('*, interview_reports(overall_score)').eq('candidate_id', candidate_id).execute()
+        if int_res.data:
+            interviews = int_res.data
+            total_tests = len(interviews)
+            
+            scores = []
+            for i in interviews:
+                # If reports exist and have a score
+                if 'interview_reports' in i and i['interview_reports']:
+                    # We might get a list of reports or a single report based on 1:1 or 1:many relation mapping
+                    reports = i['interview_reports']
+                    if isinstance(reports, list) and len(reports) > 0:
+                        score = reports[0].get('overall_score', 0)
+                        scores.append(score)
+                    elif isinstance(reports, dict):
+                        score = reports.get('overall_score', 0)
+                        scores.append(score)
+                        
+            if scores:
+                highest_score = max(scores)
+                avg_score = sum(scores) / len(scores)
+                avg_score = round(avg_score, 1)
+                
+            # Naive role derivation based on last interview role
+            if interviews:
+                last_role = interviews[-1].get('role', 'Unknown')
+                recommended_roles.append(last_role)
+                
+    except Exception as e:
+        print(f"Error fetching candidate profile in HR view: {e}")
+        flash("Could not fetch candidate details. Ensure RLS policies are set.", "error")
+        
+    return render_template(
+        'hr_candidate_profile.html', 
+        candidate=candidate_profile, 
+        total_tests=total_tests, 
+        avg_score=avg_score, 
+        highest_score=highest_score,
+        recommended_roles=recommended_roles
+    )
