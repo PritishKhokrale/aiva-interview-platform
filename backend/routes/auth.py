@@ -213,14 +213,26 @@ def set_session():
         session['user_name'] = data.get('user_name', 'User')
         session['email'] = data.get('email', '')
         
+        role = data.get('role', 'candidate')
+        session['role'] = role
+        
         # Fallback sync
         try:
             auth_client = get_supabase_client(access_token=access_token)
-            auth_client.table('candidates').upsert({
-                'id': user_id,
-                'name': session['user_name']
-            }).execute()
-        except: pass
+            if role == 'hr':
+                auth_client.table('hr_profiles').upsert({
+                    'id': user_id,
+                    'name': session['user_name'],
+                    'email': session['email']
+                }).execute()
+            else:
+                auth_client.table('candidates').upsert({
+                    'id': user_id,
+                    'name': session['user_name'],
+                    'email': session['email']
+                }).execute()
+        except Exception as e:
+            print(f"Fallback sync in set_session failed: {e}")
         
         return jsonify({"success": True, "redirect": url_for("landing_page")}), 200
         

@@ -55,7 +55,8 @@
                             access_token: session.access_token,
                             user_id: session.user.id,
                             user_name: session.user.user_metadata.full_name || 'User',
-                            email: session.user.email || ''
+                            email: session.user.email || '',
+                            role: localStorage.getItem('auth_role') || 'candidate'
                         })
                     })
                     .then(res => res.json())

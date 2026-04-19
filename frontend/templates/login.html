@@ -430,6 +430,7 @@
 
         document.getElementById('google-login').onclick = async (e) => {
             e.preventDefault();
+            localStorage.setItem('auth_role', 'candidate');
             const { error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
