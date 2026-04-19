@@ -33,23 +33,72 @@ def job_drives_page():
     drives = []
     try:
         from database.supabase_client import get_supabase_client
-        supabase = get_supabase_client()
+        access_token = session.get('access_token')
+        supabase = get_supabase_client(access_token=access_token)
         if supabase:
             # Fetch all public job drives
             res = supabase.table('job_drives').select('*').order('created_at', desc=True).execute()
             if res.data:
                 drives = res.data
+            else:
+                print("Job drives returned empty from Supabase (potentially RLS or empty table).")
     except Exception as e:
         print(f"Error fetching job drives for candidates: {e}")
         
     return render_template('student_job_drives.html', drives=drives)
+
+@app.route('/apply/<job_id>', methods=['POST'])
+@login_required
+def apply_job(job_id):
+    if session.get('role') != 'candidate':
+        flash("Only candidates can apply to job drives.", "error")
+        return redirect(url_for('job_drives_page'))
+        
+    try:
+        from database.supabase_client import get_supabase_client
+        access_token = session.get('access_token')
+        user_id = session.get('user_id')
+        supabase = get_supabase_client(access_token=access_token)
+        
+        if supabase:
+            # Upsert fails safely, or we let constraint block duplicates
+            payload = {
+                'job_drive_id': job_id,
+                'candidate_id': user_id,
+                'status': 'Pending Review'
+            }
+            supabase.table('job_applications').insert(payload).execute()
+            flash("Application submitted successfully! The HR team will review your profile.", "success")
+    except Exception as e:
+        err_msg = str(e)
+        if "duplicate key" in err_msg.lower() or "unique constraint" in err_msg.lower():
+            flash("You have already applied for this job drive.", "error")
+        else:
+            flash("Failed to submit application. Please make sure the applications table exists.", "error")
+            print(f"Application Error: {e}")
+            
+    return redirect(url_for('job_drives_page'))
 
 @app.route('/hr_dashboard')
 @login_required
 def hr_dashboard_page():
     if session.get('role') != 'hr':
         return redirect(url_for('dashboard_page'))
-    return render_template('hr_dashboard.html')
+        
+    applicants = []
+    try:
+        from database.supabase_client import get_supabase_client
+        access_token = session.get('access_token')
+        supabase = get_supabase_client(access_token=access_token)
+        if supabase:
+            # RLS policy automatically filters this to ONLY applications for this HR's job drives
+            res = supabase.table('job_applications').select('*, candidates(name, email), job_drives(job_role, company_name)').order('applied_at', desc=True).execute()
+            if res.data:
+                applicants = res.data
+    except Exception as e:
+        print(f"Error fetching HR applicants: {e}")
+        
+    return render_template('hr_dashboard.html', applicants=applicants)
 
 @app.route('/dashboard')
 @login_required

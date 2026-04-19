@@ -19,6 +19,17 @@
         </div>
     </div>
 
+    <!-- Alert Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div style="padding: 1rem; margin-bottom: 2rem; border-radius: 8px; font-size: 0.9rem; {% if category == 'success' %}background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399;{% else %}background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     {% if drives and drives|length > 0 %}
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
             {% for d in drives %}
@@ -62,7 +73,12 @@
                     <!-- Action Bar -->
                     <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.1); margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.8rem; color: #64748b;">Added {{ d.created_at[:10] if d.created_at else 'Recently' }}</span>
-                        <a href="{{ url_for('upload_page') }}" style="background: rgba(129,140,248,0.15); color: #818cf8; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid rgba(129,140,248,0.3); transition: background 0.2s;">Target Profile &rarr;</a>
+                        
+                        <form action="{{ url_for('apply_job', job_id=d.id) }}" method="POST" style="margin: 0;">
+                            <button type="submit" style="background: rgba(129,140,248,0.15); color: #818cf8; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid rgba(129,140,248,0.3); transition: background 0.2s; cursor: pointer;">
+                                Apply Now &rarr;
+                            </button>
+                        </form>
                     </div>
                 </div>
             {% endfor %}
