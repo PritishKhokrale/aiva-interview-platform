@@ -24,6 +24,16 @@ def signup_page():
     import os
     return render_template('signup.html', os=os)
 
+@auth_bp.route('/hr/login', methods=['GET'])
+def hr_login_page():
+    import os
+    return render_template('hr_login.html', os=os)
+
+@auth_bp.route('/hr/signup', methods=['GET'])
+def hr_signup_page():
+    import os
+    return render_template('hr_signup.html', os=os)
+
 @auth_bp.route('/login', methods=['POST'])
 def login_post():
     email = request.form.get('email')
@@ -37,6 +47,7 @@ def login_post():
             session['user_id'] = res.user.id
             session['user_name'] = res.user.user_metadata.get('full_name', 'User')
             session['email'] = res.user.email if hasattr(res.user, 'email') else email
+            session['role'] = 'candidate'
             
             # Fallback sync to candidates table
             try:
@@ -78,6 +89,7 @@ def signup_post():
                 session['access_token'] = res.session.access_token
                 session['user_id'] = user_id
                 session['user_name'] = res.user.user_metadata.get('full_name', 'User')
+                session['role'] = 'candidate'
                 
                 # Fallback sync to candidates table
                 try:
@@ -101,6 +113,81 @@ def signup_post():
             
     flash("Database connection failed", "error")
     return redirect(url_for('auth.signup_page'))
+
+@auth_bp.route('/hr/login', methods=['POST'])
+def hr_login_post():
+    email = request.form.get('email')
+    password = request.form.get('password')
+    supabase = get_supabase_client()
+    
+    if supabase:
+        try:
+            res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            session['access_token'] = res.session.access_token
+            session['user_id'] = res.user.id
+            session['user_name'] = res.user.user_metadata.get('full_name', 'HR Administrator')
+            session['email'] = res.user.email if hasattr(res.user, 'email') else email
+            session['role'] = 'hr'
+            
+            # Fallback sync to hr_profiles table
+            try:
+                auth_client = get_supabase_client(access_token=res.session.access_token)
+                auth_client.table('hr_profiles').upsert({
+                    'id': res.user.id,
+                    'name': session['user_name'],
+                    'email': email
+                }).execute()
+            except Exception as e:
+                print(f"Fallback HR sync failed (table might not exist yet): {e}")
+                
+            return redirect(url_for('landing_page'))
+        except Exception as e:
+            flash(str(e), 'error')
+            return redirect(url_for('auth.hr_login_page'))
+    
+    flash("Database connection failed", "error")
+    return redirect(url_for('auth.hr_login_page'))
+
+@auth_bp.route('/hr/signup', methods=['POST'])
+def hr_signup_post():
+    name = request.form.get('name')
+    email = request.form.get('email')
+    password = request.form.get('password')
+    supabase = get_supabase_client()
+    
+    if supabase:
+        try:
+            res = supabase.auth.sign_up({"email": email, "password": password, "options": {"data": {"full_name": name}}})
+            user_id = res.user.id
+            
+            if res.session:
+                session['access_token'] = res.session.access_token
+                session['user_id'] = user_id
+                session['user_name'] = res.user.user_metadata.get('full_name', 'HR Administrator')
+                session['role'] = 'hr'
+                
+                # Fallback sync to hr_profiles table
+                try:
+                    auth_client = get_supabase_client(access_token=res.session.access_token)
+                    auth_client.table('hr_profiles').upsert({
+                        'id': user_id,
+                        'name': session['user_name'],
+                        'email': email
+                    }).execute()
+                except Exception as e:
+                    print(f"Fallback HR sync failed (table might not exist yet): {e}")
+                    
+                return redirect(url_for('landing_page'))
+                
+            flash("HR Account created! Please log in (or check email for verification).", "success")
+            return redirect(url_for('auth.hr_login_page'))
+            
+        except Exception as e:
+            flash(str(e), 'error')
+            return redirect(url_for('auth.hr_signup_page'))
+            
+    flash("Database connection failed", "error")
+    return redirect(url_for('auth.hr_signup_page'))
 
 @auth_bp.route('/logout', methods=['GET'])
 def logout():

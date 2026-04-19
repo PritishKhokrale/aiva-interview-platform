@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIVA - HR Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-color: #020617;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            /* HR Portal specific background tint */
+            background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+        }
+
+        /* Animated Background Orbs for HR */
+        .orb-container {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            animation: pulse-orb linear infinite alternate;
+        }
+        @keyframes pulse-orb {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 0.5; }
+        }
+
+        /* Core Card */
+        .auth-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 440px;
+            padding: 24px;
+            box-sizing: border-box;
+            animation: floatUp 0.5s ease-out forwards;
+        }
+        @keyframes floatUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Logo Area - HR Styled */
+        .logo-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            border-radius: 16px;
+            background: rgba(16, 185, 129, 0.15); /* Emerald tint for HR */
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            margin-bottom: 16px;
+            transition: transform 0.2s;
+        }
+        .logo-box:hover { transform: scale(1.05); }
+        .logo-box svg { color: #34d399; }
+        .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #34d399, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header-sub {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Main Form Card */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            border-top: 4px solid #10b981; /* Emerald top border to denote HR */
+        }
+
+        /* Tabs */
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 28px;
+            background: rgba(0,0,0,0.2);
+            padding: 4px;
+            border-radius: 10px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 8px;
+            border-radius: 7px;
+            border: none;
+            cursor: pointer;
+            background: transparent;
+            color: #94a3b8;
+            font-family: inherit;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: #10b981; /* Emerald active tab */
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 14px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .input-field {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #e2e8f0;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            border-color: #10b981;
+            background: rgba(15, 23, 42, 0.8);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+        }
+        .pw-wrapper { position: relative; }
+        .pw-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            margin-top: 4px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-submit:hover {
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+        }
+        .btn-submit:active { transform: scale(0.98); }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 24px;
+            color: #475569;
+            font-size: 0.85rem;
+        }
+
+        .alert-box {
+            padding: 10px 14px;
+            background: rgba(220,38,38,0.15);
+            border: 1px solid rgba(220,38,38,0.3);
+            border-radius: 8px;
+            color: #f87171;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+
+        /* JS Hide State */
+        .hidden { display: none; }
+        .collapsed { max-height: 0; opacity: 0; margin: 0; pointer-events: none; }
+        .expanded { max-height: 80px; opacity: 1; margin-bottom: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="orb-container" id="orbs"></div>
+
+    <div class="auth-wrapper">
+        <div style="text-align: center; margin-bottom: 32px;">
+            <div class="logo-box">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+                <span class="logo-text">AIVA HR</span>
+            </div>
+            <p class="header-sub">Recruiter & Administrator Portal</p>
+        </div>
+
+        <div class="glass-card">
+            <!-- TABS -->
+            <div class="tab-bar">
+                <button type="button" class="tab-btn active" id="tab-login">Sign In</button>
+                <button type="button" class="tab-btn" id="tab-register">Register HR</button>
+            </div>
+
+            <!-- ALERTS -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert-box">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- FORM -->
+            <form id="auth-form" action="{{ url_for('auth.hr_login_post') }}" method="POST">
+                
+                <div class="form-group collapsed" id="name-group">
+                    <label>Full Name</label>
+                    <input type="text" name="name" class="input-field" placeholder="Jane Doe" id="name-input">
+                </div>
+
+                <div class="form-group expanded">
+                    <label>Work Email</label>
+                    <input type="email" name="email" class="input-field" placeholder="hr@company.com" required>
+                </div>
+
+                <div class="form-group expanded">
+                    <label>Password</label>
+                    <div class="pw-wrapper">
+                        <input type="password" name="password" class="input-field" id="pw-field" placeholder="••••••••" style="padding-right:42px" required>
+                        <button type="button" class="pw-toggle" id="pw-toggle-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="eye-icon"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submit-btn">Access HR Dashboard</button>
+            </form>
+        </div>
+
+        <p class="auth-footer"><a href="{{ url_for('landing_page') }}" style="color: #64748b; text-decoration: none;">&larr; Back to Main Platform</a></p>
+    </div>
+
+    <!-- Integrate Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ─── Generate Background Orbs ──────────────────────────────────────────
+        const orbContainer = document.getElementById('orbs');
+        for (let i = 0; i < 4; i++) {
+            const orb = document.createElement('div');
+            orb.className = 'orb';
+            const size = 250 + i * 100;
+            orb.style.width = size + 'px';
+            orb.style.height = size + 'px';
+            orb.style.left = (15 + i * 20) + '%';
+            orb.style.top = (10 + i * 15) + '%';
+            orb.style.background = i % 2 === 0 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(52, 211, 153, 0.03)';
+            orb.style.animationDuration = (5 + i) + 's';
+            orb.style.animationDelay = (i * 0.7) + 's';
+            orbContainer.appendChild(orb);
+        }
+
+        // ─── Tab Switching Logic ───────────────────────────────────────────────
+        const tabLogin = document.getElementById('tab-login');
+        const tabRegister = document.getElementById('tab-register');
+        const authForm = document.getElementById('auth-form');
+        const nameGroup = document.getElementById('name-group');
+        const nameInput = document.getElementById('name-input');
+        const submitBtn = document.getElementById('submit-btn');
+
+        const ROUTE_LOGIN = "{{ url_for('auth.hr_login_post') }}";
+        const ROUTE_SIGNUP = "{{ url_for('auth.hr_signup_post') }}";
+
+        // Check URL path to pre-select signup
+        const isRegistering = window.location.pathname.includes('/signup');
+        if (isRegistering) switchToRegister();
+
+        tabLogin.onclick = () => switchToLogin();
+        tabRegister.onclick = () => switchToRegister();
+
+        function switchToLogin() {
+            tabLogin.classList.add('active');
+            tabRegister.classList.remove('active');
+            nameGroup.classList.remove('expanded');
+            nameGroup.classList.add('collapsed');
+            nameInput.removeAttribute('required');
+            authForm.action = ROUTE_LOGIN;
+            submitBtn.innerText = "Access HR Dashboard";
+            window.history.replaceState({}, '', '/hr/login');
+        }
+
+        function switchToRegister() {
+            tabRegister.classList.add('active');
+            tabLogin.classList.remove('active');
+            nameGroup.classList.remove('collapsed');
+            nameGroup.classList.add('expanded');
+            nameInput.setAttribute('required', 'true');
+            authForm.action = ROUTE_SIGNUP;
+            submitBtn.innerText = "Register HR Account";
+            window.history.replaceState({}, '', '/hr/signup');
+        }
+
+        // ─── Password Visibility Toggle ────────────────────────────────────────
+        const pwField = document.getElementById('pw-field');
+        const pwToggleBtn = document.getElementById('pw-toggle-btn');
+        const eyeIcon = document.getElementById('eye-icon');
+        let showPw = false;
+
+        pwToggleBtn.onclick = () => {
+            showPw = !showPw;
+            pwField.type = showPw ? 'text' : 'password';
+            eyeIcon.innerHTML = showPw 
+                ? '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>'
+                : '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
+        };
+    </script>
+</body>
+</html>

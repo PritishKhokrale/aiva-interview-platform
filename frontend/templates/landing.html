@@ -242,9 +242,14 @@
         <div id="auth-buttons" style="display: flex; gap: 1rem; align-items: center;">
             {% if session.get('access_token') %}
                 <span style="color: #94a3b8; font-weight: 500; font-size: 0.95rem;">Hello, {{ session.get('user_name', 'User') }}</span>
-                <a href="{{ url_for('dashboard_page') }}" class="btn-secondary" style="padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); text-decoration: none;">Dashboard</a>
+                {% if session.get('role') == 'hr' %}
+                    <a href="{{ url_for('hr_dashboard_page') }}" class="btn-secondary" style="padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.5); text-decoration: none;">HR Dashboard</a>
+                {% else %}
+                    <a href="{{ url_for('dashboard_page') }}" class="btn-secondary" style="padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); text-decoration: none;">Dashboard</a>
+                {% endif %}
                 <a href="{{ url_for('auth.logout') }}" class="btn-primary" style="padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; background: #ef4444; color: white; text-decoration: none;">Log Out</a>
             {% else %}
+                <a href="{{ url_for('auth.hr_login_page') }}" class="btn-secondary" style="padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); text-decoration: none;">HR Portal</a>
                 <a href="{{ url_for('auth.login_page') }}" class="btn-secondary" style="padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); text-decoration: none;">Log In</a>
                 <a href="{{ url_for('auth.signup_page') }}" class="btn-primary" style="padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; background: #818cf8; color: white; text-decoration: none;">Sign Up</a>
             {% endif %}

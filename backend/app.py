@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv() # Load from .env file
 
-from flask import Flask, render_template, session, request
+from flask import Flask, render_template, session, request, redirect, url_for
 from flask_cors import CORS
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
@@ -26,9 +26,19 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 def landing_page():
     return render_template('landing.html')
 
+@app.route('/hr_dashboard')
+@login_required
+def hr_dashboard_page():
+    if session.get('role') != 'hr':
+        return redirect(url_for('dashboard_page'))
+    return render_template('hr_dashboard.html')
+
 @app.route('/dashboard')
 @login_required
 def dashboard_page():
+    if session.get('role') == 'hr':
+        return redirect(url_for('hr_dashboard_page'))
+        
     recent_interviews = []
     total_practices = 0
     avg_score = 0
