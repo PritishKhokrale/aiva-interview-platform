@@ -302,7 +302,7 @@ export default function MeetingRoom() {
       }
 
       // Socket
-      const socket = io(window.location.origin, { transports: ['websocket', 'polling'] })
+      const socket = io('https://aiva-meeting-api.onrender.com', { transports: ['websocket', 'polling'] })
       socketRef.current = socket
 
       socket.on('connect', () => {
