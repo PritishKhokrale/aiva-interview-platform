@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, jsonify
 from routes.interview import current_interviews
 from database.supabase_client import get_supabase_client
 
