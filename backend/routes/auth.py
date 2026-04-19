@@ -140,7 +140,7 @@ def hr_login_post():
             except Exception as e:
                 print(f"Fallback HR sync failed (table might not exist yet): {e}")
                 
-            return redirect(url_for('landing_page'))
+            return redirect(url_for('hr_dashboard_page'))
         except Exception as e:
             flash(str(e), 'error')
             return redirect(url_for('auth.hr_login_page'))
@@ -177,7 +177,7 @@ def hr_signup_post():
                 except Exception as e:
                     print(f"Fallback HR sync failed (table might not exist yet): {e}")
                     
-                return redirect(url_for('landing_page'))
+                return redirect(url_for('hr_dashboard_page'))
                 
             flash("HR Account created! Please log in (or check email for verification).", "success")
             return redirect(url_for('auth.hr_login_page'))
@@ -234,6 +234,7 @@ def set_session():
         except Exception as e:
             print(f"Fallback sync in set_session failed: {e}")
         
-        return jsonify({"success": True, "redirect": url_for("landing_page")}), 200
+        target_route = "hr_dashboard_page" if role == 'hr' else "landing_page"
+        return jsonify({"success": True, "redirect": url_for(target_route)}), 200
         
     return jsonify({"success": False, "error": "Missing token or user_id"}), 400
