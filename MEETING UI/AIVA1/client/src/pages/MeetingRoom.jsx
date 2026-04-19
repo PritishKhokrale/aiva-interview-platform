@@ -54,6 +54,9 @@ function VideoTile({ stream, name, isSpeaking, isMuted, isLocal, noVideo, isScre
   useEffect(() => {
     if (ref.current && stream) {
       ref.current.srcObject = stream
+      const forceUpdate = () => { if (ref.current) ref.current.srcObject = stream }
+      stream.addEventListener('addtrack', forceUpdate)
+      return () => stream.removeEventListener('addtrack', forceUpdate)
     }
   }, [stream])
   const initials = (name || '?').split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
@@ -222,10 +225,15 @@ export default function MeetingRoom() {
 
     localStreamRef.current?.getTracks().forEach(t => pc.addTrack(t, localStreamRef.current))
 
-    const remoteStream = new MediaStream()
     pc.ontrack = e => {
-      remoteStream.addTrack(e.track)
-      setPeers(p => ({ ...p, [targetId]: { ...p[targetId], stream: remoteStream, name: targetName } }))
+      setPeers(p => {
+        let finalStream = e.streams && e.streams[0] ? e.streams[0] : null
+        if (!finalStream) {
+          finalStream = p[targetId]?.stream || new MediaStream()
+          finalStream.addTrack(e.track)
+        }
+        return { ...p, [targetId]: { ...p[targetId], stream: finalStream, name: targetName } }
+      })
     }
     pc.onicecandidate = e => {
       if (e.candidate) socketRef.current?.emit('ice-candidate', { targetSocketId: targetId, candidate: e.candidate })
