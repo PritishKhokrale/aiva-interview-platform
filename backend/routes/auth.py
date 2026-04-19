@@ -47,20 +47,33 @@ def login_post():
             session['user_id'] = res.user.id
             session['user_name'] = res.user.user_metadata.get('full_name', 'User')
             session['email'] = res.user.email if hasattr(res.user, 'email') else email
-            session['role'] = 'candidate'
-            
-            # Fallback sync to candidates table
+            # Centralized Failsafe: If they are an HR admin but accidentally used the Candidate Login
+            is_hr = False
             try:
                 auth_client = get_supabase_client(access_token=res.session.access_token)
-                auth_client.table('candidates').upsert({
-                    'id': res.user.id,
-                    'name': session['user_name'],
-                    'email': email
-                }).execute()
+                hr_check = auth_client.table('hr_profiles').select('id').eq('id', res.user.id).execute()
+                if hr_check.data and len(hr_check.data) > 0:
+                    is_hr = True
             except Exception as e:
-                print(f"Fallback candidate sync failed: {e}")
+                pass
                 
-            return redirect(url_for('landing_page'))
+            if is_hr:
+                session['role'] = 'hr'
+                return redirect(url_for('hr_dashboard_page'))
+            else:
+                session['role'] = 'candidate'
+                # Fallback sync to candidates table
+                try:
+                    auth_client = get_supabase_client(access_token=res.session.access_token)
+                    auth_client.table('candidates').upsert({
+                        'id': res.user.id,
+                        'name': session['user_name'],
+                        'email': email
+                    }).execute()
+                except Exception as e:
+                    print(f"Fallback candidate sync failed: {e}")
+                    
+                return redirect(url_for('landing_page'))
         except Exception as e:
             flash(str(e), 'error')
             return redirect(url_for('auth.login_page'))
@@ -213,7 +226,20 @@ def set_session():
         session['user_name'] = data.get('user_name', 'User')
         session['email'] = data.get('email', '')
         
+        # Failsafe: In case of OAuth localStorage drop, aggressively check if they are HR
+        is_hr = False
+        try:
+            auth_client = get_supabase_client(access_token=access_token)
+            hr_check = auth_client.table('hr_profiles').select('id').eq('id', user_id).execute()
+            if hr_check.data and len(hr_check.data) > 0:
+                is_hr = True
+        except:
+            pass
+            
         role = data.get('role', 'candidate')
+        if is_hr:
+            role = 'hr'
+            
         session['role'] = role
         
         # Fallback sync
