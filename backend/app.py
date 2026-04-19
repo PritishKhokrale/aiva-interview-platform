@@ -84,21 +84,7 @@ def apply_job(job_id):
 def hr_dashboard_page():
     if session.get('role') != 'hr':
         return redirect(url_for('dashboard_page'))
-        
-    applicants = []
-    try:
-        from database.supabase_client import get_supabase_client
-        access_token = session.get('access_token')
-        supabase = get_supabase_client(access_token=access_token)
-        if supabase:
-            # RLS policy automatically filters this to ONLY applications for this HR's job drives
-            res = supabase.table('job_applications').select('*, candidates(name, email), job_drives(job_role, company_name)').order('applied_at', desc=True).execute()
-            if res.data:
-                applicants = res.data
-    except Exception as e:
-        print(f"Error fetching HR applicants: {e}")
-        
-    return render_template('hr_dashboard.html', applicants=applicants)
+    return render_template('hr_dashboard.html')
 
 @app.route('/dashboard')
 @login_required
