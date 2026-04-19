@@ -185,8 +185,19 @@ def finish_and_evaluate():
     supabase = get_supabase_client(access_token=access_token)
     if supabase and interview_id != "demo_id":
         try:
-            # Mark interview complete
-            supabase.table("interviews").update({"status": "completed"}).eq("id", interview_id).execute()
+            # NEW FAILSAFE: Embed evaluation_result into history to bypass RLS missing column issues on interview_reports
+            history = iv_session.get("history", [])
+            import json
+            history.append({
+                "role": "evaluation", 
+                "content": json.dumps(evaluation_result)
+            })
+            
+            # Mark interview complete AND store the evaluation as the last history item
+            supabase.table("interviews").update({
+                "status": "completed",
+                "history": history
+            }).eq("id", interview_id).execute()
             
             summary_dict = evaluation_result.get("summary", {})
             summary_text = summary_dict.get("overview", "") if isinstance(summary_dict, dict) else summary_dict

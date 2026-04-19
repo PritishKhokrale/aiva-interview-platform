@@ -44,7 +44,7 @@
                 {% for iv in recent_interviews|default([]) %}
                 <tr>
                     <td>
-                        <div style="font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                        <div style="font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
                             {% if iv.session_mode == 'apti' %}Aptitude Test: {% endif %}{{ iv.role }}
                             {% if iv.session_mode == 'apti' %}
                                 <span style="font-size: 0.65rem; background: #eff6ff; color: #1d4ed8; padding: 2px 6px; border-radius: 4px; border: 1px solid #dbeafe;">APTI</span>

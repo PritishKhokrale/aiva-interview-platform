@@ -15,28 +15,16 @@ from routes.upload import upload_bp
 from routes.report import report_bp
 from routes.aptitude import aptitude_bp
 from routes.auth import auth_bp, login_required
-from routes.dsa import dsa_bp
 
 app.register_blueprint(interview_bp, url_prefix='/api/interview')
 app.register_blueprint(upload_bp, url_prefix='/api/upload')
 app.register_blueprint(report_bp, url_prefix='/api/report')
 app.register_blueprint(aptitude_bp, url_prefix='/api/aptitude')
 app.register_blueprint(auth_bp, url_prefix='/auth')
-app.register_blueprint(dsa_bp, url_prefix='/ide')
 
 @app.route('/')
 def landing_page():
     return render_template('landing.html')
-
-@app.route('/login')
-def redirect_login():
-    from flask import redirect, url_for
-    return redirect(url_for('auth.login_page'))
-
-@app.route('/signup')
-def redirect_signup():
-    from flask import redirect, url_for
-    return redirect(url_for('auth.signup_page'))
 
 @app.route('/dashboard')
 @login_required
@@ -75,6 +63,15 @@ def dashboard_page():
                         scores.append(report["overall_score"])
                     elif report and isinstance(report, list) and len(report) > 0 and report[0].get("overall_score") is not None:
                         scores.append(report[0]["overall_score"])
+                    else:
+                        # FAILSAFE FALLBACK check history
+                        hist = iv.get("history", [])
+                        if hist and len(hist) > 0 and isinstance(hist[-1], dict) and hist[-1].get("role") == "evaluation":
+                            import json
+                            try:
+                                fall_score = json.loads(hist[-1]["content"]).get("overall_score", 0)
+                                scores.append(fall_score)
+                            except: pass
                 
                 if scores:
                     avg_score = round(sum(scores) / len(scores))
@@ -115,6 +112,20 @@ def my_interviews_page():
                 
             resp = query.order("created_at", desc=True).execute()
             if resp.data:
+                for iv in resp.data:
+                    rep = iv.get("interview_reports")
+                    if not rep or (isinstance(rep, list) and len(rep) == 0):
+                        hist = iv.get("history", [])
+                        if hist and len(hist) > 0 and isinstance(hist[-1], dict) and hist[-1].get("role") == "evaluation":
+                            import json
+                            try:
+                                fallback_eval = json.loads(hist[-1]["content"])
+                                iv["interview_reports"] = [{
+                                    "overall_score": fallback_eval.get("overall_score", 0),
+                                    "summary": fallback_eval.get("summary", {}).get("overview", "Evaluated") if isinstance(fallback_eval.get("summary"), dict) else fallback_eval.get("summary", "Evaluated"),
+                                    "metrics": fallback_eval.get("metrics", {})
+                                }]
+                            except: pass
                 all_interviews = resp.data
     except Exception as e:
         print(f"Error fetching interviews: {e}")
@@ -139,7 +150,8 @@ def aptitude_report_page():
     results = None
     if interview_id:
         from database.supabase_client import get_supabase_client
-        supabase = get_supabase_client()
+        access_token = session.get('access_token')
+        supabase = get_supabase_client(access_token=access_token)
         if supabase:
             resp = supabase.table("interviews").select("aptitude_data").eq("id", interview_id).execute()
             if resp.data and len(resp.data) > 0:

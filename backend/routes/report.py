@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, session
 from routes.interview import current_interviews
 from database.supabase_client import get_supabase_client
 
@@ -7,7 +7,8 @@ report_bp = Blueprint('report', __name__)
 @report_bp.route('/<string:interview_id>', methods=['GET'])
 def get_report(interview_id):
     # Try fetching from Supabase first
-    supabase = get_supabase_client()
+    access_token = session.get('access_token')
+    supabase = get_supabase_client(access_token=access_token)
     
     if supabase and interview_id != "demo_id":
         try:
@@ -57,6 +58,21 @@ def get_report(interview_id):
                                       evaluation=eval_data,
                                       history=history,
                                       overall_score=eval_data["overall_score"])
+            else:
+                # NEW FAILSAFE: If no report in interview_reports, check interviews.history
+                iv_resp = supabase.table("interviews").select("*").eq("id", interview_id).execute()
+                if iv_resp.data and len(iv_resp.data) > 0:
+                    history = iv_resp.data[0].get("history", [])
+                    if history and len(history) > 0 and isinstance(history[-1], dict) and history[-1].get("role") == "evaluation":
+                        import json
+                        try:
+                            eval_data = json.loads(history[-1].get("content", "{}"))
+                            return render_template('report.html', 
+                                                   evaluation=eval_data, 
+                                                   history=history[:-1], 
+                                                   overall_score=eval_data.get('overall_score', 0))
+                        except Exception as p_err:
+                            print(f"Failed parsing failsafe evaluation: {p_err}")
         except Exception as e:
             print(f"Failed to fetch report from Supabase: {e}")
 

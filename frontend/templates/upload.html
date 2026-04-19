@@ -90,7 +90,7 @@
                         <div id="resumeTab" class="tab-content active">
                             <form id="uploadForm" action="/api/upload/resume" method="POST" enctype="multipart/form-data">
                                 <input type="file" id="resume" name="file" style="display: none;" accept=".pdf,.docx,.jpg,.png" onchange="updateFileName(this)">
-                                <label for="resume" class="btn-secondary" style="display: inline-block;">Choose File</label>
+                                <label for="resume" class="btn-secondary" style="display: inline-block; color: var(--text-primary); border: 1px solid var(--border-color); background: transparent;">Choose File</label>
                                 <span id="fileName" style="margin-left: 10px; font-weight: 500; font-size: 0.875rem;"></span>
                             </form>
                         </div>

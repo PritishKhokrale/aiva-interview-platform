@@ -2,15 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Video, LogIn, ArrowRight, Hash } from 'lucide-react'
-import { useAuth } from '../context/AuthContext.jsx'
 
 export default function JoinPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  
   const [meetingId, setMeetingId] = useState('')
-  const [name, setName] = useState(user?.name || '')
-  const [email, setEmail] = useState(user?.email || '')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
