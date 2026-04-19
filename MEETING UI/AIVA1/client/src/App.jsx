@@ -6,6 +6,7 @@ import MeetingRoom from './pages/MeetingRoom.jsx'
 import SettingsPage from './pages/SettingsPage.jsx'
 import JoinPage from './pages/JoinPage.jsx'
 import WaitingRoomPage from './pages/WaitingRoomPage.jsx'
+import LoginPage from './pages/LoginPage.jsx'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -24,7 +25,7 @@ export default function App() {
   return (
     <Routes>
       {/* Public routes — no auth required */}
-      <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/join" element={<JoinPage />} />
       <Route path="/waiting/:meetingId" element={<WaitingRoomPage />} />
 

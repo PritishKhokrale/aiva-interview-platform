@@ -36,6 +36,7 @@ def login_post():
             session['access_token'] = res.session.access_token
             session['user_id'] = res.user.id
             session['user_name'] = res.user.user_metadata.get('full_name', 'User')
+            session['email'] = res.user.email if hasattr(res.user, 'email') else email
             
             # Fallback sync to candidates table
             try:
@@ -123,6 +124,7 @@ def set_session():
         session['access_token'] = access_token
         session['user_id'] = user_id
         session['user_name'] = data.get('user_name', 'User')
+        session['email'] = data.get('email', '')
         
         # Fallback sync
         try:

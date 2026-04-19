@@ -300,8 +300,13 @@
     <script>
         // Start Direct Live Meeting Script
         function startLiveMeeting() {
-            // Redirect to the Vite App base port
-            window.location.href = `https://aiva-interview-platform.vercel.app/`;
+            // Redirect to the Vite App with the authenticated user email to trigger SSO
+            const email = "{{ session.get('email', '') }}";
+            let url = 'https://aiva-interview-platform.vercel.app/';
+            if (email) {
+                url += `?user_email=${encodeURIComponent(email)}`;
+            }
+            window.location.href = url;
         }
     </script>
 </body>

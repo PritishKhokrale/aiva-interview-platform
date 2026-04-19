@@ -7,6 +7,15 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Intercept cross-origin SSO token (email) passed by Python Dashboard
+    const urlParams = new URLSearchParams(window.location.search)
+    const originEmail = urlParams.get('user_email')
+    if (originEmail) {
+      localStorage.setItem('aiva_user_email', originEmail)
+      // Erase raw parameter from browser URL for visual cleanliness
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+
     const email = localStorage.getItem('aiva_user_email')
     if (email) {
       fetch(`/api/auth/me?email=${encodeURIComponent(email)}`)
