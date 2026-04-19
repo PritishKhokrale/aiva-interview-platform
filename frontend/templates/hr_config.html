@@ -1,0 +1,133 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate-fade-in" style="max-width: 1200px; margin: 0 auto; padding-top: 1rem;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+        <div>
+            <h1 style="margin-bottom: 0.5rem; font-size: 2rem; font-family: 'Outfit', sans-serif;">Assessment Configuration</h1>
+            <p style="color: var(--text-secondary); margin: 0; font-size: 1rem;">
+                Launch and configure new Job Drives for candidates.
+            </p>
+        </div>
+        <a href="{{ url_for('hr_dashboard_page') }}" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.1);">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Alert Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div style="padding: 1rem; margin-bottom: 2rem; border-radius: 8px; font-size: 0.9rem; {% if category == 'success' %}background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399;{% else %}background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; align-items: start;">
+        
+        <!-- Creation Form -->
+        <div class="card" style="border-top: 4px solid #3b82f6; overflow: visible;">
+            <div style="padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <h3 style="margin: 0; font-size: 1.25rem; display: flex; align-items: center; gap: 10px;">
+                    <svg width="20" height="20" fill="none" stroke="#3b82f6" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>
+                    Create Job Drive
+                </h3>
+            </div>
+            
+            <form action="{{ url_for('hr.create_drive') }}" method="POST" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+                
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Company Name <span style="color:#ef4444">*</span></label>
+                    <input type="text" name="company_name" required placeholder="e.g. Google, Apple" style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; outline: none; font-family: inherit;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Job Role <span style="color:#ef4444">*</span></label>
+                    <input type="text" name="job_role" required placeholder="e.g. Software Development Engineer" style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; outline: none; font-family: inherit;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">CTC (Package) <span style="color:#ef4444">*</span></label>
+                        <input type="text" name="ctc" required placeholder="e.g. $120k or 15 LPA" style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; outline: none; font-family: inherit;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Bond (Optional)</label>
+                        <input type="text" name="bond" placeholder="e.g. 2 Years" style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; outline: none; font-family: inherit;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Minimum Rank Req.</label>
+                        <input type="number" name="min_rank" placeholder="e.g. 50" style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; outline: none; font-family: inherit;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Difficulty <span style="color:#ef4444">*</span></label>
+                        <select name="difficulty" style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; outline: none; font-family: inherit; appearance: none; cursor: pointer;">
+                            <option value="Easy" style="background: #1e293b;">Easy</option>
+                            <option value="Medium" style="background: #1e293b;" selected>Medium</option>
+                            <option value="Hard" style="background: #1e293b;">Hard</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn-primary" type="submit" style="margin-top: 1rem; width: 100%; padding: 0.85rem; font-size: 1rem; border-radius: 8px; cursor: pointer; background: #3b82f6; border: none; color: white; font-weight: 600; transition: transform 0.2s, background 0.2s;">
+                    Launch Job Drive
+                </button>
+            </form>
+        </div>
+
+        <!-- History / Active Drives -->
+        <div>
+            <h3 style="margin: 0 0 1.5rem 0; font-size: 1.25rem; display: flex; align-items: center; gap: 10px; color: var(--text-primary);">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                My Hosted Job Drives
+            </h3>
+            
+            {% if drives and drives|length > 0 %}
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% for d in drives %}
+                    <div class="card" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; border-left: 3px solid #3b82f6;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h4 style="margin: 0 0 0.25rem 0; font-size: 1.1rem; color: white;">{{ d.job_role }}</h4>
+                                <span style="font-size: 0.85rem; color: #94a3b8; font-weight: 500;">{{ d.company_name }}</span>
+                            </div>
+                            <span style="font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; 
+                                {% if d.difficulty|lower == 'easy' %}background: rgba(16,185,129,0.15); color: #34d399;
+                                {% elif d.difficulty|lower == 'medium' %}background: rgba(245,158,11,0.15); color: #fbbf24;
+                                {% else %}background: rgba(239,68,68,0.15); color: #f87171;{% endif %}">
+                                {{ d.difficulty }}
+                            </span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem;">
+                            <div style="color: var(--text-secondary);">
+                                <span style="color: #64748b;">CTC:</span> <span style="color: #e2e8f0; font-weight: 500;">{{ d.ctc }}</span>
+                            </div>
+                            <div style="color: var(--text-secondary);">
+                                <span style="color: #64748b;">Bond:</span> <span style="color: #e2e8f0; font-weight: 500;">{{ d.bond if d.bond else 'None' }}</span>
+                            </div>
+                            <div style="color: var(--text-secondary);">
+                                <span style="color: #64748b;">Min Rank:</span> <span style="color: #e2e8f0; font-weight: 500;">{{ d.min_rank if d.min_rank else 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="card" style="padding: 2.5rem 2rem; text-align: center; border: 1px dashed rgba(255,255,255,0.1);">
+                    <svg width="40" height="40" fill="none" stroke="#64748b" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom: 1rem;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <h4 style="margin: 0 0 0.5rem 0; color: #e2e8f0;">No Job Drives Yet</h4>
+                    <p style="margin: 0; color: #94a3b8; font-size: 0.9rem; line-height: 1.5;">You haven't posted any open job configurations. Use the module on the left to broadcast your first role pipeline!</p>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

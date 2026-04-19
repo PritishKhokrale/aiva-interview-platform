@@ -15,16 +15,34 @@ from routes.upload import upload_bp
 from routes.report import report_bp
 from routes.aptitude import aptitude_bp
 from routes.auth import auth_bp, login_required
+from routes.hr import hr_bp
 
 app.register_blueprint(interview_bp, url_prefix='/api/interview')
 app.register_blueprint(upload_bp, url_prefix='/api/upload')
 app.register_blueprint(report_bp, url_prefix='/api/report')
 app.register_blueprint(aptitude_bp, url_prefix='/api/aptitude')
 app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(hr_bp, url_prefix='/hr')
 
 @app.route('/')
 def landing_page():
     return render_template('landing.html')
+
+@app.route('/job_drives')
+def job_drives_page():
+    drives = []
+    try:
+        from database.supabase_client import get_supabase_client
+        supabase = get_supabase_client()
+        if supabase:
+            # Fetch all public job drives
+            res = supabase.table('job_drives').select('*').order('created_at', desc=True).execute()
+            if res.data:
+                drives = res.data
+    except Exception as e:
+        print(f"Error fetching job drives for candidates: {e}")
+        
+    return render_template('student_job_drives.html', drives=drives)
 
 @app.route('/hr_dashboard')
 @login_required
