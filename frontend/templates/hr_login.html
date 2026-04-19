@@ -370,6 +370,7 @@
 
         document.getElementById('google-login').onclick = async (e) => {
             e.preventDefault();
+            localStorage.removeItem('auth_role');
             localStorage.setItem('auth_role', 'hr');
             const { error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',

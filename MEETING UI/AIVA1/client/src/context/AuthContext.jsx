@@ -21,6 +21,8 @@ export function AuthProvider({ children }) {
         window.history.replaceState({}, document.title, window.location.pathname)
       }
     } else {
+      // Allow anonymous users - no redirect to login
+      setUser({ email: 'guest@aiva.com', name: 'Guest User', id: 'guest-' + Math.random().toString(36).substr(2, 9) })
       setLoading(false)
     }
   }, [])
