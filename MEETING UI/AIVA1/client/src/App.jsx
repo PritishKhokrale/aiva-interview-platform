@@ -6,7 +6,11 @@ import MeetingRoom from './pages/MeetingRoom.jsx'
 import SettingsPage from './pages/SettingsPage.jsx'
 import JoinPage from './pages/JoinPage.jsx'
 import WaitingRoomPage from './pages/WaitingRoomPage.jsx'
-import LoginPage from './pages/LoginPage.jsx'
+
+function RedirectToPythonLogin() {
+  window.location.href = 'https://aiva-python-api.onrender.com/login';
+  return null;
+}
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -25,7 +29,7 @@ export default function App() {
   return (
     <Routes>
       {/* Public routes — no auth required */}
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<RedirectToPythonLogin />} />
       <Route path="/join" element={<JoinPage />} />
       <Route path="/waiting/:meetingId" element={<WaitingRoomPage />} />
 

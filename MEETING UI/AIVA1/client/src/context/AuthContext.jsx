@@ -9,22 +9,17 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     // Intercept cross-origin SSO token (email) passed by Python Dashboard
     const urlParams = new URLSearchParams(window.location.search)
-    const originEmail = urlParams.get('user_email')
-    if (originEmail) {
-      localStorage.setItem('aiva_user_email', originEmail)
-      // Erase raw parameter from browser URL for visual cleanliness
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
-
-    const email = localStorage.getItem('aiva_user_email')
+    let email = urlParams.get('user_email') || localStorage.getItem('aiva_user_email')
+    
     if (email) {
-      fetch(`/api/auth/me?email=${encodeURIComponent(email)}`)
-        .then(r => r.ok ? r.json() : null)
-        .then(u => {
-          if (u && u.email) setUser(u)
-          else localStorage.removeItem('aiva_user_email')
-        })
-        .finally(() => setLoading(false))
+      localStorage.setItem('aiva_user_email', email)
+      // Blindly trust the SSO email token injected by the Python Supabase Gateway
+      setUser({ email: email, name: email.split('@')[0], id: 'sso-user' })
+      setLoading(false)
+      
+      if (urlParams.has('user_email')) {
+        window.history.replaceState({}, document.title, window.location.pathname)
+      }
     } else {
       setLoading(false)
     }
