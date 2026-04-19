@@ -50,23 +50,35 @@
             </div>
         </a>
 
-        <!-- Card 3 -->
-        <a href="http://localhost:3000" target="_blank" class="card" style="text-decoration: none; display: flex; flex-direction: column; height: 100%; transition: transform 0.2s, box-shadow 0.2s; border-top: 4px solid #f59e0b;">
+        <!-- Card 3: Live Meeting -->
+        <a href="javascript:void(0)" onclick="startLiveMeeting()" class="card" style="text-decoration: none; display: flex; flex-direction: column; height: 100%; transition: transform 0.2s, box-shadow 0.2s; border-top: 4px solid #ec4899;">
             <div style="padding: 1.5rem;">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(245,158,11,0.1); color: #f59e0b; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(236, 72, 153, 0.1); color: #ec4899; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
                 </div>
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; color: var(--text-primary);">DSA Playground Monitor</h3>
-                <p style="margin: 0; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">Access the live code repository, review technical tests, and set challenges.</p>
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; color: var(--text-primary);">Live Recruitment Meeting</h3>
+                <p style="margin: 0; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">Enter the live video interview room for real-time candidate evaluations and interviews.</p>
             </div>
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.1); margin-top: auto; font-weight: 600; color: #f59e0b; text-align: right;">
-                Open Monitor &rarr;
+            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.1); margin-top: auto; font-weight: 600; color: #ec4899; text-align: right;">
+                Launch Meeting &rarr;
             </div>
-    <!-- Future Expansions Placeholders -->
+        </a>
+
+        <!-- Future Expansions Placeholders -->
     <div class="card" style="padding: 2rem; border-radius: 16px; border: 1px dashed var(--border-color); text-align: center; background: rgba(0,0,0,0.2);">
         <svg fill="none" stroke="var(--text-secondary)" width="48" height="48" viewBox="0 0 24 24" style="opacity:0.5; margin-bottom:1rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
         <h3 style="margin:0 0 0.5rem 0; color: var(--text-primary);">Data Population Imminent</h3>
         <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto; line-height: 1.5;">This HR Dashboard is currently a clean layout ready for deeper integrations. Explore the configurations panel and candidate pool above.</p>
     </div>
+    <script>
+        function startLiveMeeting() {
+            const email = "{{ session.get('email', '') }}";
+            let url = 'https://aiva-interview-platform.vercel.app/';
+            if (email) {
+                url += `?user_email=${encodeURIComponent(email)}`;
+            }
+            window.location.href = url;
+        }
+    </script>
 </div>
 {% endblock %}
