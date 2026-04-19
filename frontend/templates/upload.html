@@ -382,8 +382,9 @@
                 localStorage.setItem('current_interview_id', data.interview_id);
                 // Proceed to Interview, Aptitude, or Live Meeting
                 if(config.sessionMode === 'live') {
-                    // Redirect to the Vite standalone entry
-                    window.location.href = `https://aiva-interview-platform.vercel.app/`;
+                    // Redirect to the Vite standalone entry - pass email for cross-origin SSO
+                    const userEmail = encodeURIComponent("{{ session.get('email', '') }}");
+                    window.location.href = `https://aiva-interview-platform.vercel.app/?user_email=${userEmail}`;
                 } else if(config.aptitudeEnabled) {
                     window.location.href = "{{ url_for('aptitude_page') }}";
                 } else {

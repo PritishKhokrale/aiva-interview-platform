@@ -4,6 +4,9 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    chunkSizeWarningLimit: 1000, // Raise limit to 1000 KB (face-api.js + framer-motion are large)
+  },
   server: {
     port: 5173,
     host: '0.0.0.0',   // expose to local network (phones, tablets on same Wi-Fi)

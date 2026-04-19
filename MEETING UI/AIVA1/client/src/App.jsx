@@ -8,13 +8,7 @@ import JoinPage from './pages/JoinPage.jsx'
 import WaitingRoomPage from './pages/WaitingRoomPage.jsx'
 
 function RedirectToPythonLogin() {
-  // If in local dev, point back to the local Python Flask HR portal
-  const targetHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://127.0.0.1:5000' 
-    : 'https://aiva-python-api.onrender.com';
-    
-  // The correct route is /hr/login, not /login
-  window.location.href = `${targetHost}/hr/login`;
+  window.location.href = 'https://aiva-python-api.onrender.com/auth/login';
   return null;
 }
 

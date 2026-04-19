@@ -1,6 +1,7 @@
 import os
 import json
 from groq import Groq
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 # Load env vars before doing anything else
@@ -9,6 +10,14 @@ load_dotenv(env_path)
 
 def get_groq_client():
     return Groq(api_key=os.environ.get("GROQ_API_KEY", "dummy_key"))
+
+def get_gemini_model():
+    """Returns a configured Gemini 2.0 Flash model for question generation."""
+    genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
+    return genai.GenerativeModel(
+        model_name="gemini-2.0-flash",
+        generation_config=genai.GenerationConfig(temperature=0.7)
+    )
 
 def generate_next_interaction(conversation_history, candidate_profile, config):
     """
@@ -195,6 +204,7 @@ You have asked {ai_turn_count} questions so far out of approximately {total_targ
         messages.append(msg)
         
     try:
+        # --- Groq 70B for live voice interview (high accuracy, conversational quality) ---
         response = get_groq_client().chat.completions.create(
             messages=messages,
             model="llama-3.3-70b-versatile",
@@ -355,18 +365,17 @@ def generate_aptitude_questions(sections, role, difficulty="medium"):
     """
     
     try:
-        # Groq TPM limit is 6000 for free tier. Prompt is ~1500 tokens.
-        # max_tokens + prompt_tokens MUST be < 6000.
-        safe_max = min(num_sections * 1400, 4300) 
-        
-        response = get_groq_client().chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
-            model="llama-3.1-8b-instant",
-            temperature=0.4,
-            max_tokens=safe_max,
-            response_format={"type": "json_object"}
-        )
-        content = response.choices[0].message.content
+        # --- Gemini 2.0 Flash for aptitude MCQ generation (free quota, great at structured JSON) ---
+        model = get_gemini_model()
+        gemini_prompt = prompt + "\n\nIMPORTANT: Return ONLY a valid JSON object. No markdown, no code fences, just raw JSON."
+        response = model.generate_content(gemini_prompt)
+        raw = response.text.strip()
+        # Strip markdown code fences if Gemini wraps the JSON
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        content = raw.strip()
         import json
         return json.loads(content)
     except Exception as e:
