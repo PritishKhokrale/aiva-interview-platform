@@ -3,7 +3,7 @@ import { useNavigate, NavLink } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Video, Settings, Plus, LogOut, LogIn, Calendar, Clock, Users, Copy, CheckCircle,
-  X, ChevronRight, Mic, Sparkles, Trash2, Trash, AlertCircle, Globe, Sun, Moon
+  X, ChevronRight, Mic, Sparkles, Trash2, Trash, AlertCircle, Globe, Sun, Moon, ArrowLeft
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 
@@ -400,6 +400,12 @@ export default function Dashboard() {
             <p style={{ color: '#64748b', fontSize: '0.87rem' }}>Your interview platform dashboard</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => window.location.href = 'https://aiva-python-api.onrender.com/hr_dashboard'} 
+              className="btn-secondary" title="Back to HR Dashboard"
+              style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
+              <ArrowLeft size={16} /> HR Dashboard
+            </motion.button>
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               onClick={toggleTheme} className="btn-secondary" title="Toggle Theme"
               style={{ width: '38px', height: '38px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>
