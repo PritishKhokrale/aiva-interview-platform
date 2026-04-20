@@ -156,8 +156,12 @@ def shortlist_candidate(app_id):
         }
         status_string = f"Shortlisted__{json.dumps(config)}"
         supabase = get_supabase_client(access_token=session.get('access_token'))
-        supabase.table("job_applications").update({"status": status_string}).eq("id", app_id).execute()
-        flash("Candidate successfully advanced to Shortlist. Targeted AI Interview configured.", "success")
+        res = supabase.table("job_applications").update({"status": status_string}).eq("id", app_id).execute()
+        
+        if hasattr(res, 'data') and len(res.data) == 0:
+            flash("Failed to shortlist candidate: RLS Policy blocked the update. Please run the SQL command in Supabase.", "error")
+        else:
+            flash("Candidate successfully advanced to Shortlist. Targeted AI Interview configured.", "success")
     except Exception as e:
         print(f"Error shortlisting: {e}")
         flash("Failed to shortlist candidate. Check DB credentials.", "error")
