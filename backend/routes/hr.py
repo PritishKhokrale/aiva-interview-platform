@@ -74,6 +74,7 @@ def create_drive():
 @hr_bp.route('/candidate/<candidate_id>', methods=['GET'])
 @hr_required
 def review_candidate(candidate_id):
+    app_id = request.args.get('app_id')
     candidate_profile = None
     interviews = []
     
@@ -136,8 +137,31 @@ def review_candidate(candidate_id):
         total_tests=total_tests, 
         avg_score=avg_score, 
         highest_score=highest_score,
-        recommended_roles=recommended_roles
+        recommended_roles=recommended_roles,
+        app_id=app_id
     )
+
+@hr_bp.route('/shortlist/<app_id>', methods=['POST'])
+@hr_required
+def shortlist_candidate(app_id):
+    try:
+        import json
+        config = {
+            "role": request.form.get("role", "Software Engineer"),
+            "sessionMode": request.form.get("sessionMode", "ai"),
+            "duration": request.form.get("duration", "standard"),
+            "type": request.form.get("type", "technical"),
+            "difficulty": request.form.get("difficulty", "medium"),
+            "is_hr_driven": True
+        }
+        status_string = f"Shortlisted__{json.dumps(config)}"
+        supabase = get_supabase_client(access_token=session.get('access_token'))
+        supabase.table("job_applications").update({"status": status_string}).eq("id", app_id).execute()
+        flash("Candidate successfully advanced to Shortlist. Targeted AI Interview configured.", "success")
+    except Exception as e:
+        print(f"Error shortlisting: {e}")
+        flash("Failed to shortlist candidate. Check DB credentials.", "error")
+    return redirect(url_for('hr.candidate_pool'))
 
 @hr_bp.route('/candidates', methods=['GET'])
 @hr_required
@@ -147,8 +171,21 @@ def candidate_pool():
         supabase = get_supabase_client(access_token=session.get('access_token'))
         # RLS policy automatically filters this to ONLY applications for this HR's job drives
         res = supabase.table('job_applications').select('*, candidates(name, email), job_drives(job_role, company_name)').order('applied_at', desc=True).execute()
+        
         if res.data:
             applicants = res.data
+            # Now we attach matching completed interviews for HR specific job_roles
+            # We map this manually because job_applications does not foreign-key interviews.
+            cand_ids = [app.get('candidate_id') for app in applicants if app.get('candidate_id')]
+            if cand_ids:
+                 int_res = supabase.table('interviews').select('id, candidate_id, role, status').in_('candidate_id', cand_ids).eq('status', 'completed').execute()
+                 if int_res.data:
+                      for app in applicants:
+                          target_role = app.get('job_drives', {}).get('job_role', '')
+                          # Find an interview for this candidate matching the role
+                          matches = [i for i in int_res.data if i['candidate_id'] == app['candidate_id'] and i['role'] == target_role]
+                          if matches:
+                              app['completed_interview_id'] = matches[0]['id']
     except Exception as e:
         print(f"Error fetching HR applicants: {e}")
         flash("Failed to fetch candidate pool. Please check permissions.", "error")

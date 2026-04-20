@@ -73,12 +73,24 @@
                     <!-- Action Bar -->
                     <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.1); margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.8rem; color: #64748b;">Added {{ d.created_at[:10] if d.created_at else 'Recently' }}</span>
-                        
+                        {% if d.id in applied_map %}
+                            {% set app_status = applied_map[d.id].status %}
+                            {% if 'Shortlisted' in app_status %}
+                            <a href="{{ url_for('upload.start_hr_interview', app_id=applied_map[d.id].id) }}" style="background: #10b981; color: white; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; text-decoration: none; border: none; transition: transform 0.2s; cursor: pointer; display: inline-block;">
+                                Take AI Interview &rarr;
+                            </a>
+                            {% else %}
+                            <button type="button" disabled style="background: rgba(255,255,255,0.05); color: #94a3b8; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.1); cursor: not-allowed;">
+                                Under Review
+                            </button>
+                            {% endif %}
+                        {% else %}
                         <form action="{{ url_for('apply_job', job_id=d.id) }}" method="POST" style="margin: 0;">
                             <button type="submit" style="background: rgba(129,140,248,0.15); color: #818cf8; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid rgba(129,140,248,0.3); transition: background 0.2s; cursor: pointer;">
                                 Apply Now &rarr;
                             </button>
                         </form>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}

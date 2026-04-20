@@ -55,9 +55,13 @@
                 {% endif %}
             </div>
             
-            <button class="btn-primary" style="margin-top: 1.5rem; width: 100%; padding: 0.85rem; font-size: 1rem; border-radius: 8px; cursor: pointer; background: #10b981; border: none; color: white; font-weight: 600; transition: transform 0.2s, background 0.2s;">
+            {% if app_id %}
+            <button onclick="document.getElementById('shortlistModal').style.display='block'" class="btn-primary" style="margin-top: 1.5rem; width: 100%; padding: 0.85rem; font-size: 1rem; border-radius: 8px; cursor: pointer; background: #10b981; border: none; color: white; font-weight: 600; transition: transform 0.2s, background 0.2s;">
                 Advance to Shortlist
             </button>
+            {% else %}
+            <p style="margin-top:1.5rem; font-size:0.85rem; color:#94a3b8; text-align:center;">This is a general profile view. Access via the application pool to advance shortlisting.</p>
+            {% endif %}
         </div>
 
         <!-- Metrics Overview -->
@@ -97,4 +101,63 @@
 
     </div>
 </div>
+
+<!-- Shortlist Modal -->
+{% if app_id %}
+<div id="shortlistModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7);">
+    <div class="card" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; padding: 2rem;">
+        <h2 style="margin-top: 0; margin-bottom: 1.5rem; color: white;">Configure Targeted Interview</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">
+            When this candidate accepts the shortlist, they will be given an AI interview specifically locked into the settings below.
+        </p>
+        <form action="{{ url_for('hr.shortlist_candidate', app_id=app_id) }}" method="POST">
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase;">Job Role Overlay</label>
+                <input type="text" name="role" required class="form-control" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem; border-radius: 8px;" placeholder="e.g. Software Engineer">
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display: block; color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase;">Session Type</label>
+                    <select name="sessionMode" class="form-control" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem; border-radius: 8px;">
+                        <option value="ai">AI Interview</option>
+                        <option value="apti">Aptitude Test</option>
+                        <option value="combined">Combined Full Mock</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase;">Difficulty</label>
+                    <select name="difficulty" class="form-control" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem; border-radius: 8px;">
+                        <option value="easy">Easy</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase;">Duration</label>
+                    <select name="duration" class="form-control" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem; border-radius: 8px;">
+                        <option value="short">Short (5 Qs)</option>
+                        <option value="standard" selected>Standard (10 Qs)</option>
+                        <option value="intensive">Intensive (15+ Qs)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase;">Focus Area</label>
+                    <select name="type" class="form-control" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem; border-radius: 8px;">
+                        <option value="mixed">Mixed</option>
+                        <option value="technical" selected>Technical</option>
+                        <option value="hr">HR/Behavioral</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button type="button" onclick="document.getElementById('shortlistModal').style.display='none'" class="btn-secondary" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 8px; color: white;">Cancel</button>
+                <button type="submit" class="btn-primary" style="background: #10b981; border: none; padding: 0.5rem 1rem; border-radius: 8px; color: white; font-weight: bold;">Confirm Shortlist</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}

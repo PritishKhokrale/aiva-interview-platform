@@ -61,3 +61,88 @@ def upload_resume():
         "filename": file.filename,
         "parsed_text": parsed_text
     })
+
+@upload_bp.route('/start-hr-interview/<app_id>', methods=['GET'])
+def start_hr_interview(app_id):
+    from flask import session, render_template_string, redirect, url_for
+    import json
+    
+    try:
+        from database.supabase_client import get_supabase_client
+        supabase = get_supabase_client(access_token=session.get('access_token'))
+        if not supabase:
+            return "Unauthorized", 401
+            
+        res = supabase.table('job_applications').select('status').eq('id', app_id).single().execute()
+        if not res.data or 'Shortlisted' not in res.data['status']:
+            return "Application not shortlisted or not found.", 404
+            
+        # Parse status: Shortlisted__{"role": "...", ...}
+        status_string = res.data['status']
+        config_data = {}
+        if "__" in status_string:
+            try:
+                config_data = json.loads(status_string.split("__")[1])
+            except:
+                pass
+                
+        # Fill defaults if missing
+        config = {
+            "role": config_data.get("role", "Software Engineer"),
+            "mode": "resume",
+            "difficulty": config_data.get("difficulty", "medium"),
+            "duration": config_data.get("duration", "standard"),
+            "type": config_data.get("type", "technical"),
+            "sessionMode": config_data.get("sessionMode", "ai"),
+            "aptitudeEnabled": config_data.get("sessionMode") in ["apti", "combined"],
+            "aptitudeSections": ["Quantitative", "Logical", "Verbal"],
+            "jdText": "",
+            "parsedResume": "",
+            "is_hr_driven": True,
+            "job_application_id": app_id
+        }
+        
+        # We bounce the user to an intermediate page that injects localStorage then redirects
+        html = f"""
+        <html>
+        <body>
+            <h3>Initializing your HR-assigned Interview...</h3>
+            <script>
+                // Standard setup
+                const config = {json.dumps(config)};
+                localStorage.setItem('interview_config', JSON.stringify(config));
+                localStorage.removeItem('current_interview_id');
+                
+                // Pre-create session
+                fetch('/api/interview/start', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify(config)
+                }}).then(res => res.json()).then(data => {{
+                    if(data.interview_id) {{
+                        localStorage.setItem('current_interview_id', data.interview_id);
+                        if(config.sessionMode === 'live') {{
+                            window.location.href = `https://aiva-interview-platform.vercel.app/?user_email=${{encodeURIComponent("{session.get('email', '')}")}}`;
+                        }} else if(config.aptitudeEnabled) {{
+                            window.location.href = "{url_for('aptitude_page')}";
+                        }} else {{
+                            window.location.href = "{url_for('interview_page')}";
+                        }}
+                    }} else {{
+                        alert("Failed to initialize session.");
+                        window.location.href = "{url_for('job_drives_page')}";
+                    }}
+                }}).catch(err => {{
+                    console.error(err);
+                    alert("Network error initializing interview.");
+                    window.location.href = "{url_for('job_drives_page')}";
+                }});
+            </script>
+        </body>
+        </html>
+        """
+        return render_template_string(html)
+        
+    except Exception as e:
+        print(f"Error launching HR interview: {e}")
+        return "Internal Server Error", 500

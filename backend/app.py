@@ -42,10 +42,23 @@ def job_drives_page():
                 drives = res.data
             else:
                 print("Job drives returned empty from Supabase (potentially RLS or empty table).")
+                
+            # Fetch user applications
+            user_id = session.get('user_id')
+            applied_map = {}
+            if user_id:
+                app_res = supabase.table('job_applications').select('id, job_drive_id, status').eq('candidate_id', user_id).execute()
+                if app_res.data:
+                    for app in app_res.data:
+                        applied_map[app['job_drive_id']] = {
+                            "status": app['status'],
+                            "id": app['id']
+                        }
     except Exception as e:
         print(f"Error fetching job drives for candidates: {e}")
+        applied_map = {}
         
-    return render_template('student_job_drives.html', drives=drives)
+    return render_template('student_job_drives.html', drives=drives, applied_map=applied_map)
 
 @app.route('/apply/<job_id>', methods=['POST'])
 @login_required

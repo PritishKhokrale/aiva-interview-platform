@@ -1,7 +1,7 @@
 import os
 import json
 from groq import Groq
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 # Load env vars before doing anything else
@@ -12,12 +12,8 @@ def get_groq_client():
     return Groq(api_key=os.environ.get("GROQ_API_KEY", "dummy_key"))
 
 def get_gemini_model():
-    """Returns a configured Gemini 2.0 Flash model for question generation."""
-    genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
-    return genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
-        generation_config=genai.GenerationConfig(temperature=0.7)
-    )
+    """Returns a configured Gemini client for question generation."""
+    return genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""))
 
 def generate_next_interaction(conversation_history, candidate_profile, config):
     """
@@ -375,9 +371,13 @@ def generate_aptitude_questions(sections, role, difficulty="medium", questions_p
 
     try:
         # --- Gemini 2.0 Flash for aptitude MCQ generation (free quota, great at structured JSON) ---
-        model = get_gemini_model()
+        client = get_gemini_model()
         gemini_prompt = build_prompt(questions_per_section) + "\n\nIMPORTANT: Return ONLY a valid JSON object. No markdown, no code fences, just raw JSON."
-        response = model.generate_content(gemini_prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=gemini_prompt,
+            config=genai.types.GenerateContentConfig(temperature=0.7)
+        )
         raw = response.text.strip()
         # Strip markdown code fences if Gemini wraps the JSON
         if raw.startswith("```"):

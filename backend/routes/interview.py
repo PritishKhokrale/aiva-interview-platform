@@ -201,6 +201,9 @@ def finish_and_evaluate():
             
             summary_dict = evaluation_result.get("summary", {})
             summary_text = summary_dict.get("overview", "") if isinstance(summary_dict, dict) else summary_dict
+            
+            if iv_session.get("config", {}).get("is_hr_driven"):
+                summary_text = "[HR_LOCKED] " + str(summary_text)
 
             # Sanitize overall_score to ensure Postgres integer column safety
             raw_score = evaluation_result.get("overall_score", 0)

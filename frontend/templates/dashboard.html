@@ -90,7 +90,11 @@
                                 </div>
                             </td>
                             <td style="display: flex; gap: 1rem; align-items: center;">
+                                {% if report.summary and '[HR_LOCKED]' in report.summary %}
+                                <span style="color: #94a3b8; font-size: 0.85rem; font-weight: 500;">Sent to HR</span>
+                                {% else %}
                                 <a href="{{ url_for('report.get_report', interview_id=iv.id) }}" style="color: var(--primary-color); text-decoration: none; font-weight: 500; font-size: 0.875rem;">View Report</a>
+                                {% endif %}
                                 <button onclick="deleteInterview('{{ iv.id }}')" style="background: none; border: none; color: #EF4444; cursor: pointer; text-decoration: none; font-size: 0.875rem; font-weight: 500; padding: 0;">Delete</button>
                             </td>
                         {% else %}

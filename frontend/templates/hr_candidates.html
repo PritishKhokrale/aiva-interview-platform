@@ -49,9 +49,16 @@
                 <div style="display: flex; align-items: center; gap: 1rem;">
                     <div style="text-align: right; margin-right: 1rem;">
                         <span style="display: block; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Status</span>
-                        <span style="font-size: 0.85rem; font-weight: 600; color: #34d399;">{{ app.status }}</span>
+                        <span style="font-size: 0.85rem; font-weight: 600; {% if app.completed_interview_id %}color: #3b82f6;{% elif 'Shortlisted' in app.status %}color: #34d399;{% else %}color: #fbbf24;{% endif %}">
+                            {% if app.completed_interview_id %}Interview Completed{% else %}{{ app.status.split('__')[0] }}{% endif %}
+                        </span>
                     </div>
-                    <a href="{{ url_for('hr.review_candidate', candidate_id=app.candidate_id) }}" class="btn-primary" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; text-decoration: none; display: inline-block;">
+                    {% if app.completed_interview_id %}
+                    <a href="{{ url_for('report.get_report', interview_id=app.completed_interview_id) }}" class="btn-primary" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; background: #3b82f6; color: white; border: none; cursor: pointer; text-decoration: none; display: inline-block;">
+                        View Report
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('hr.review_candidate', candidate_id=app.candidate_id, app_id=app.id) }}" class="btn-secondary" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; text-decoration: none; display: inline-block;">
                         Review Profile
                     </a>
                 </div>
