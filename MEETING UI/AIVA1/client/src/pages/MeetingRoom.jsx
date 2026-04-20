@@ -6,7 +6,8 @@ import {
   Mic, MicOff, Video, VideoOff, Monitor, MonitorOff, Circle, StopCircle,
   FileText, Hand, PhoneOff, Users, MessageSquare, Brain, AlertTriangle,
   Copy, CheckCircle, Send, Sparkles, Download, Eye, Activity, Zap,
-  UserCheck, UserX, Bell, Lock, Unlock, Shield, X, Camera, Terminal
+  UserCheck, UserX, Bell, Lock, Unlock, Shield, X, Camera, Terminal,
+  LayoutDashboard, LogOut
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useFaceAnalysis } from '../hooks/useFaceAnalysis.js'
@@ -133,7 +134,7 @@ export default function MeetingRoom() {
   const { meetingId } = useParams()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
 
   // Support guest candidates: name/email from URL params (set by WaitingRoomPage)
   const guestName = searchParams.get('name') || null
@@ -642,6 +643,14 @@ export default function MeetingRoom() {
     // INTEGRATION: Redirect to Unified Dashboard
     window.location.href = 'http://127.0.0.1:5000/dashboard';
   }
+  const backToDashboard = () => {
+    window.location.href = 'http://127.0.0.1:5000/dashboard';
+  }
+
+  const handleSignOut = () => {
+    logout();
+    window.location.href = 'http://127.0.0.1:5000/api/auth/logout';
+  }
 
   // Host control functions
   const hostMute = sid => socketRef.current?.emit('host-mute-user', { roomId: meetingId, targetSocketId: sid })
@@ -1027,6 +1036,8 @@ export default function MeetingRoom() {
           )}
           <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', margin: '4px 2px' }} />
           <CtrlBtn icon={PhoneOff} label="End" onClick={endMeeting} danger />
+          <CtrlBtn icon={LayoutDashboard} label="Dashboard" onClick={backToDashboard} />
+          <CtrlBtn icon={LogOut} label="Sign Out" onClick={handleSignOut} />
         </motion.div>
       </div>
 

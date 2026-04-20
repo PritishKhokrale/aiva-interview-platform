@@ -302,7 +302,7 @@ def evaluate_full_interview(conversation_history, candidate_profile, config):
             "question_analysis": []
         }
 
-def generate_aptitude_questions(sections, role, difficulty="medium"):
+def generate_aptitude_questions(sections, role, difficulty="medium", questions_per_section=10):
     """
     Generates structured Multiple Choice Questions for specified aptitude sections.
     """
@@ -310,12 +310,12 @@ def generate_aptitude_questions(sections, role, difficulty="medium"):
         sections = ["Quantitative", "Logical", "Verbal"]
         
     num_sections = len(sections)
-    total_q = num_sections * 10
     sections_str = ", ".join(sections)
     
-    # Build dynamic structure block
-    structure_block = ",\n        ".join([
-        f"""{{
+    def build_prompt(q_count):
+        total_q_count = num_sections * q_count
+        structure_block = ",\n        ".join([
+            f"""{{
           "name": "{sec}",
           "questions": [
             {{
@@ -325,12 +325,12 @@ def generate_aptitude_questions(sections, role, difficulty="medium"):
               "correct_answer": "Option A",
               "explanation": "Brief explanation"
             }},
-            ... // Continue generating exactly 10 objects for {sec}
+            ... // Continue generating exactly {q_count} objects for {sec}
           ]
         }}""" for sec in sections
-    ])
-    
-    prompt = f"""
+        ])
+        
+        return f"""
     Generate a highly professional Aptitude Test for a candidate applying for a {role} position.
     DIFFICULTY LEVEL: {difficulty.upper()} (Strictly adhere to this complexity).
 
@@ -348,8 +348,8 @@ def generate_aptitude_questions(sections, role, difficulty="medium"):
     - HARD: Complex interlocking data sets, abstract/unfamiliar reasoning, and challenging constraints.
     
     STRICT COUNT REQUIREMENT:
-    You MUST generate EXACTLY 10 questions per requested section.
-    Total requested sections: {num_sections}. Total required questions: {total_q}.
+    You MUST generate EXACTLY {q_count} questions per requested section.
+    Total requested sections: {num_sections}. Total required questions: {total_q_count}.
     DO NOT output sections that were not explicitly listed above.
     Do not truncate the JSON.
 
@@ -364,10 +364,19 @@ def generate_aptitude_questions(sections, role, difficulty="medium"):
     }}
     """
     
+    def sanitize_and_assign_ids(data):
+        import uuid
+        if not data or "sections" not in data:
+            return data
+        for sec in data.get("sections", []):
+            for q in sec.get("questions", []):
+                q["id"] = str(uuid.uuid4())
+        return data
+
     try:
         # --- Gemini 2.0 Flash for aptitude MCQ generation (free quota, great at structured JSON) ---
         model = get_gemini_model()
-        gemini_prompt = prompt + "\n\nIMPORTANT: Return ONLY a valid JSON object. No markdown, no code fences, just raw JSON."
+        gemini_prompt = build_prompt(questions_per_section) + "\n\nIMPORTANT: Return ONLY a valid JSON object. No markdown, no code fences, just raw JSON."
         response = model.generate_content(gemini_prompt)
         raw = response.text.strip()
         # Strip markdown code fences if Gemini wraps the JSON
@@ -377,19 +386,30 @@ def generate_aptitude_questions(sections, role, difficulty="medium"):
                 raw = raw[4:]
         content = raw.strip()
         import json
-        return json.loads(content)
+        return sanitize_and_assign_ids(json.loads(content))
     except Exception as e:
+        print(f"Gemini API Error in aptitude generation: {e}. Falling back to Groq Llama-3.1-8b-instant.")
         import traceback
-        err_msg = traceback.format_exc()
-        print(f"Error generating aptitude questions: {e}")
         try:
-            with open("generate_error.log", "w") as f:
-                f.write(err_msg)
-                if 'content' in locals():
-                    f.write("\n\nContent:\n")
-                    f.write(content)
-        except: pass
-        return {"sections": []}
+            # Fallback to Groq with fewer questions to prevent hitting TPM limits on free tier
+            fallback_q_count = min(questions_per_section, 5)
+            groq_prompt = build_prompt(fallback_q_count) + "\n\nIMPORTANT: Return ONLY a valid JSON object. Do not wrap in markdown."
+            response = get_groq_client().chat.completions.create(
+                messages=[{"role": "user", "content": groq_prompt}],
+                model="llama-3.1-8b-instant",
+                temperature=0.7,
+                response_format={"type": "json_object"}
+            )
+            import json
+            return sanitize_and_assign_ids(json.loads(response.choices[0].message.content))
+        except Exception as fallback_e:
+            err_msg = traceback.format_exc()
+            print(f"Error generating aptitude questions with fallback: {fallback_e}")
+            try:
+                with open("generate_error.log", "w") as f:
+                    f.write(f"Gemini Error:\n{str(e)}\n\nGroq Fallback Error:\n{str(fallback_e)}\n\nTraceback:\n{err_msg}")
+            except: pass
+            return {"sections": []}
 
 def evaluate_aptitude_test(questions, user_answers):
     """

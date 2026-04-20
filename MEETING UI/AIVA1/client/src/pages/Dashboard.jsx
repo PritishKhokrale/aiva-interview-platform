@@ -369,7 +369,10 @@ export default function Dashboard() {
     setShowClearConfirm(false)
   }
 
-  const handleLogout = () => { logout(); navigate('/login') }
+  const handleLogout = () => {
+    logout();
+    window.location.href = 'http://127.0.0.1:5000/api/auth/logout';
+  }
 
   const upcoming = meetings.filter(m => m.status !== 'ended')
   const history = meetings.filter(m => m.status === 'ended')
