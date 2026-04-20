@@ -179,15 +179,25 @@ def candidate_pool():
         if res.data:
             applicants = res.data
             # Now we attach matching completed interviews for HR specific job_roles
-            # We map this manually because job_applications does not foreign-key interviews.
             cand_ids = [app.get('candidate_id') for app in applicants if app.get('candidate_id')]
             if cand_ids:
                  int_res = supabase.table('interviews').select('id, candidate_id, role, status').in_('candidate_id', cand_ids).eq('status', 'completed').execute()
                  if int_res.data:
                       for app in applicants:
                           target_role = app.get('job_drives', {}).get('job_role', '')
-                          # Find an interview for this candidate matching the role
-                          matches = [i for i in int_res.data if i['candidate_id'] == app['candidate_id'] and i['role'] == target_role]
+                          status_string = app.get('status', '')
+                          
+                          # Extract exact HR configured role from the Shortlisted json if it exists
+                          if "Shortlisted__" in status_string:
+                              import json
+                              try:
+                                  config_json = json.loads(status_string.split('__')[1])
+                                  if 'role' in config_json:
+                                      target_role = config_json['role']
+                              except: pass
+                              
+                          # Find an interview for this candidate matching the role case-insensitively
+                          matches = [i for i in int_res.data if i['candidate_id'] == app['candidate_id'] and i['role'].lower() == target_role.lower()]
                           if matches:
                               app['completed_interview_id'] = matches[0]['id']
     except Exception as e:
