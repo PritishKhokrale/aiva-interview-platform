@@ -125,8 +125,23 @@ def submit_code():
         result = response.json()
 
         output = (result.get("stdout") or "").strip()
+        expected = case["expected"].strip()
 
-        if output == case["expected"]:
+        is_passed = False
+        if output == expected:
+            is_passed = True
+        elif problem_id == "two_sum":
+            # For Two Sum, indices can be in any order. 
+            # Normalize by sorting both output and expected strings.
+            try:
+                out_parts = sorted(output.split())
+                exp_parts = sorted(expected.split())
+                if out_parts == exp_parts:
+                    is_passed = True
+            except:
+                pass
+
+        if is_passed:
             passed += 1
             results.append({
                 "testcase": i + 1,
