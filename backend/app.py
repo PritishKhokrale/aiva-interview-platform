@@ -47,12 +47,32 @@ def job_drives_page():
             user_id = session.get('user_id')
             applied_map = {}
             if user_id:
-                app_res = supabase.table('job_applications').select('id, job_drive_id, status').eq('candidate_id', user_id).execute()
+                app_res = supabase.table('job_applications').select('id, job_drive_id, status, job_drives(job_role)').eq('candidate_id', user_id).execute()
                 if app_res.data:
+                    int_res = supabase.table('interviews').select('id, role, status').eq('candidate_id', user_id).eq('status', 'completed').execute()
+                    
                     for app in app_res.data:
+                        target_role = app.get('job_drives', {}).get('job_role', '')
+                        status_string = app.get('status', '')
+                        
+                        has_completed = False
+                        if "Shortlisted__" in status_string:
+                            import json
+                            try:
+                                config_json = json.loads(status_string.split('__')[1])
+                                if 'role' in config_json:
+                                    target_role = config_json['role']
+                            except: pass
+                            
+                            if int_res.data:
+                                matches = [i for i in int_res.data if i['role'].lower() == target_role.lower()]
+                                if matches:
+                                    has_completed = True
+                        
                         applied_map[app['job_drive_id']] = {
-                            "status": app['status'],
-                            "id": app['id']
+                            "status": status_string,
+                            "id": app['id'],
+                            "completed": has_completed
                         }
     except Exception as e:
         print(f"Error fetching job drives for candidates: {e}")

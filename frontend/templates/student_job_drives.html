@@ -74,9 +74,15 @@
                     <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.1); margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.8rem; color: #64748b;">Added {{ d.created_at[:10] if d.created_at else 'Recently' }}</span>
                         {% if d.id in applied_map %}
-                            {% set app_status = applied_map[d.id].status %}
-                            {% if 'Shortlisted' in app_status %}
-                            <a href="{{ url_for('upload.start_hr_interview', app_id=applied_map[d.id].id) }}" style="background: #10b981; color: white; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; text-decoration: none; border: none; transition: transform 0.2s; cursor: pointer; display: inline-block;">
+                            {% set app_info = applied_map[d.id] %}
+                            {% set app_status = app_info.status %}
+                            
+                            {% if app_info.completed %}
+                            <button type="button" disabled style="background: rgba(255,255,255,0.05); color: #10b981; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; border: 1px solid rgba(16,185,129,0.3); cursor: not-allowed;">
+                                Completed
+                            </button>
+                            {% elif 'Shortlisted' in app_status %}
+                            <a href="{{ url_for('upload.start_hr_interview', app_id=app_info.id) }}" style="background: #10b981; color: white; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; text-decoration: none; border: none; transition: transform 0.2s; cursor: pointer; display: inline-block;">
                                 Take AI Interview &rarr;
                             </a>
                             {% else %}

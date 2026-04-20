@@ -102,6 +102,20 @@ def start_hr_interview(app_id):
             "job_application_id": app_id
         }
         
+        # Check if already completed
+        target_role = config.get("role")
+        user_id = session.get('user_id')
+        if user_id and target_role:
+            int_res = supabase.table('interviews').select('id').eq('candidate_id', user_id).eq('status', 'completed').execute()
+            if int_res.data:
+                for i in int_res.data:
+                    # We just check locally or query with ilike if possible, but python fallback is fine
+                    pass
+                # A safer check using case-insensitive iteration
+                matches = [i for i in getattr(supabase.table('interviews').select('role').eq('candidate_id', user_id).eq('status', 'completed').execute(), 'data', []) if i.get('role', '').lower() == target_role.lower()]
+                if matches:
+                    return f"<h3>You have already officially completed this HR interview ({target_role}).</h3><p>Your results have been locked securely and sent to the HR Admin team.</p>", 403
+                    
         # We bounce the user to an intermediate page that injects localStorage then redirects
         return render_template('hr_interview_setup.html', config_data=config, json_config=json.dumps(config))
         
