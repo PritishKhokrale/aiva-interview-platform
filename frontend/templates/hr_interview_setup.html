@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate-fade-in" style="max-width: 600px; margin: 4rem auto; padding: 2.5rem; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+    
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem;">
+        <div style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 12px; border-radius: 50%;">
+            <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        </div>
+        <h2 style="margin: 0; color: var(--text-primary); font-size: 1.5rem;">Targeted Interview Ready</h2>
+    </div>
+
+    <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.05rem; line-height: 1.6;">
+        The HR team has configured an official AI interview to evaluate your profile. Please review the constraints determined by their team before proceeding.
+    </p>
+    
+    <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid var(--primary-color);">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div><span style="color: #64748b; font-size: 0.8rem; text-transform: uppercase; display: block; margin-bottom: 4px;">Job Role Overlay</span> <strong style="color: white; font-size: 1.05rem;">{{ config_data.role }}</strong></div>
+            <div><span style="color: #64748b; font-size: 0.8rem; text-transform: uppercase; display: block; margin-bottom: 4px;">Session Type</span> <strong style="color: white; font-size: 1.05rem;">
+                {% if config_data.sessionMode == 'apti' %}Aptitude Test{% elif config_data.sessionMode == 'combined' %}Combined Test{% else %}AI Interview{% endif %}
+            </strong></div>
+            <div><span style="color: #64748b; font-size: 0.8rem; text-transform: uppercase; display: block; margin-bottom: 4px;">Duration</span> <strong style="color: white; font-size: 1.05rem;">{{ config_data.duration | title }}</strong></div>
+            <div><span style="color: #64748b; font-size: 0.8rem; text-transform: uppercase; display: block; margin-bottom: 4px;">Focus Area</span> <strong style="color: white; font-size: 1.05rem;">{{ config_data.type | title }}</strong></div>
+            <div><span style="color: #64748b; font-size: 0.8rem; text-transform: uppercase; display: block; margin-bottom: 4px;">Difficulty</span> <strong style="color: white; font-size: 1.05rem;">{{ config_data.difficulty | title }}</strong></div>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 1rem; justify-content: flex-end; align-items: center;">
+        <a href="{{ url_for('job_drives_page') }}" class="btn-secondary" style="text-decoration: none; padding: 0.75rem 1.25rem;">Return to Dashboard</a>
+        <button onclick="startHrInterview()" id="startBtn" class="btn-primary" style="background: #10b981; border: none; cursor: pointer; font-size: 1rem; font-weight: bold; padding: 0.75rem 1.5rem; transition: background 0.2s;">Acknowledge & Launch &rarr;</button>
+    </div>
+</div>
+
+<script>
+    // Injected JSON Config directly from backend rendering context
+    const interviewConfig = {{ json_config | safe }};
+    const userEmail = "{{ session.get('email', '') | safe }}";
+
+    function startHrInterview() {
+        const btn = document.getElementById('startBtn');
+        btn.disabled = true;
+        btn.innerText = "Initializing Environment...";
+        btn.style.opacity = "0.7";
+        
+        localStorage.setItem('interview_config', JSON.stringify(interviewConfig));
+        localStorage.removeItem('current_interview_id');
+        
+        fetch('/api/interview/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(interviewConfig)
+        }).then(res => res.json()).then(data => {
+            if(data.interview_id) {
+                localStorage.setItem('current_interview_id', data.interview_id);
+                if(interviewConfig.sessionMode === 'live') {
+                    window.location.href = `https://aiva-interview-platform.vercel.app/?user_email=${encodeURIComponent(userEmail)}`;
+                } else if(interviewConfig.aptitudeEnabled) {
+                    window.location.href = "{{ url_for('aptitude_page') }}";
+                } else {
+                    window.location.href = "{{ url_for('interview_page') }}";
+                }
+            } else {
+                alert("Failed to initialize session. Engine reported an error.");
+                window.location.href = "{{ url_for('job_drives_page') }}";
+            }
+        }).catch(err => {
+            console.error(err);
+            alert("Network error communicating with interview engine.");
+            window.location.href = "{{ url_for('job_drives_page') }}";
+        });
+    }
+</script>
+{% endblock %}

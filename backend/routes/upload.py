@@ -64,7 +64,7 @@ def upload_resume():
 
 @upload_bp.route('/start-hr-interview/<app_id>', methods=['GET'])
 def start_hr_interview(app_id):
-    from flask import session, render_template_string, redirect, url_for
+    from flask import session, render_template, redirect, url_for
     import json
     
     try:
@@ -103,45 +103,7 @@ def start_hr_interview(app_id):
         }
         
         # We bounce the user to an intermediate page that injects localStorage then redirects
-        html = f"""
-        <html>
-        <body>
-            <h3>Initializing your HR-assigned Interview...</h3>
-            <script>
-                // Standard setup
-                const config = {json.dumps(config)};
-                localStorage.setItem('interview_config', JSON.stringify(config));
-                localStorage.removeItem('current_interview_id');
-                
-                // Pre-create session
-                fetch('/api/interview/start', {{
-                    method: 'POST',
-                    headers: {{ 'Content-Type': 'application/json' }},
-                    body: JSON.stringify(config)
-                }}).then(res => res.json()).then(data => {{
-                    if(data.interview_id) {{
-                        localStorage.setItem('current_interview_id', data.interview_id);
-                        if(config.sessionMode === 'live') {{
-                            window.location.href = `https://aiva-interview-platform.vercel.app/?user_email=${{encodeURIComponent("{session.get('email', '')}")}}`;
-                        }} else if(config.aptitudeEnabled) {{
-                            window.location.href = "{url_for('aptitude_page')}";
-                        }} else {{
-                            window.location.href = "{url_for('interview_page')}";
-                        }}
-                    }} else {{
-                        alert("Failed to initialize session.");
-                        window.location.href = "{url_for('job_drives_page')}";
-                    }}
-                }}).catch(err => {{
-                    console.error(err);
-                    alert("Network error initializing interview.");
-                    window.location.href = "{url_for('job_drives_page')}";
-                }});
-            </script>
-        </body>
-        </html>
-        """
-        return render_template_string(html)
+        return render_template('hr_interview_setup.html', config_data=config, json_config=json.dumps(config))
         
     except Exception as e:
         print(f"Error launching HR interview: {e}")
