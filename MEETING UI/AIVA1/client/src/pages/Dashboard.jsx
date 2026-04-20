@@ -371,7 +371,7 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     logout();
-    window.location.href = 'http://127.0.0.1:5000/api/auth/logout';
+    window.location.href = 'https://aiva-python-api.onrender.com/api/auth/logout';
   }
 
   const upcoming = meetings.filter(m => m.status !== 'ended')

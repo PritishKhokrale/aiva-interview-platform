@@ -628,7 +628,7 @@ export default function MeetingRoom() {
     
     // INTEGRATION: Push transcript to Flask Control Plane for Unified Dashboard Report
     try {
-      await fetch('http://127.0.0.1:5000/api/report/live-webhook', {
+      await fetch('https://aiva-python-api.onrender.com/api/report/live-webhook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -641,15 +641,15 @@ export default function MeetingRoom() {
     } catch (e) { console.error('Failed to push to Flask Control Plane', e); }
 
     // INTEGRATION: Redirect to Unified Dashboard
-    window.location.href = 'http://127.0.0.1:5000/dashboard';
+    window.location.href = 'https://aiva-python-api.onrender.com/dashboard';
   }
   const backToDashboard = () => {
-    window.location.href = 'http://127.0.0.1:5000/dashboard';
+    window.location.href = 'https://aiva-python-api.onrender.com/dashboard';
   }
 
   const handleSignOut = () => {
     logout();
-    window.location.href = 'http://127.0.0.1:5000/api/auth/logout';
+    window.location.href = 'https://aiva-python-api.onrender.com/api/auth/logout';
   }
 
   // Host control functions
