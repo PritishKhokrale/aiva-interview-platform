@@ -11,6 +11,8 @@ window.addEventListener("error", (e) => {
 });
 
 function CodingIDE() {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:5002";
+
 
   const [code, setCode] = useState("// Write your solution here");
   const [language, setLanguage] = useState("python");
@@ -22,7 +24,7 @@ function CodingIDE() {
   const [isLoadingSubmit, setIsLoadingSubmit] = useState(false);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:5002/problem")
+    fetch(`${API_BASE_URL}/problem`)
       .then(res => res.json())
       .then(data => {
           setProblem(data);
@@ -36,7 +38,7 @@ function CodingIDE() {
   const runCode = async () => {
     setIsLoadingRun(true);
     try {
-      const response = await fetch("http://127.0.0.1:5002/run", {
+      const response = await fetch(`${API_BASE_URL}/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: code, language: language, input: input })
@@ -62,7 +64,7 @@ function CodingIDE() {
   const submitCode = async () => {
     setIsLoadingSubmit(true);
     try {
-      const response = await fetch("http://127.0.0.1:5002/submit", {
+      const response = await fetch(`${API_BASE_URL}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: code, language: language, problem_id: problem?.id })
